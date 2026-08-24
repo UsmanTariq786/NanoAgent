@@ -5,6 +5,7 @@ import Link from "next/link";
 import Container from "@/components/ui/Container";
 import CodeBlock from "@/components/ui/CodeBlock";
 import CTA from "@/components/features/CTA";
+import { supportedProviders } from "@/components/features/providerIcons";
 import { siteConfig } from "@/lib/data";
 
 type ProductId = "agent" | "forge" | "gateway";
@@ -729,10 +730,13 @@ export default function HomePage() {
               02 · NANOFORGE · FULL-STACK APP BUILDER · FREE
             </div>
             <h2 className="text-[clamp(28px,4vw,44px)] font-bold tracking-tight text-[#f3f6fb] m-0 mb-3">
-              From a single prompt to a production app.
+              From idea to working app. No code required.
             </h2>
-            <p className="text-[16px] text-[var(--color-text-mut)] m-0">
-              Describe what you want to build. NanoForge creates a complete React frontend, Express API, and provisioned PostgreSQL database inside an isolated preview container with Git review.
+            <p className="text-[16px] text-[var(--color-text-mut)] leading-relaxed m-0 mb-3">
+              Describe what you want to build, in plain English, and NanoForge&apos;s agent scaffolds it, builds it, and shows you a live preview you can click through. Free to use.
+            </p>
+            <p className="text-[15px] text-[var(--color-text-dim)] leading-relaxed m-0">
+              <strong className="text-[var(--color-text)] font-semibold">Under the hood:</strong> a real React frontend, Express API, and provisioned PostgreSQL database, running in an isolated preview container, with every change committed to a dedicated GitHub repo for you to review.
             </p>
           </div>
 
@@ -779,7 +783,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center justify-center gap-3">
             <Link
               href="/nanoforge"
               className="inline-flex items-center justify-center gap-2 font-semibold text-[14.5px] px-6 py-3 rounded-full text-black bg-[#b07cff] hover:bg-[#cbb0ff] hover:-translate-y-0.5 transition-all duration-200 shadow-[0_6px_25px_-8px_rgba(176,124,255,0.6)]"
@@ -790,60 +794,57 @@ export default function HomePage() {
                 <path d="m12 5 7 7-7 7" />
               </svg>
             </Link>
+            <p className="text-[13.5px] text-[var(--color-text-dim)] m-0 mt-1">
+              Using NanoForge with a team?{" "}
+              <Link href="/gateway" className="text-[#cbb0ff] hover:text-white underline font-medium transition-colors">
+                See the Gateway &rarr;
+              </Link>
+            </p>
           </div>
         </Container>
       </section>
 
       {/* ─────────────────────────────────────────────
-          CHAPTER 03: GATEWAY (PAID ENTERPRISE TIER)
+          CHAPTER 03: GATEWAY (PAID · TEAMS)
           ───────────────────────────────────────────── */}
       <section className="py-20 md:py-24 border-t border-[var(--color-border)] relative reveal-target" id="gateway-section">
         <Container>
           <div className="rounded-3xl p-6 sm:p-12 border border-[rgba(232,166,87,0.3)] bg-gradient-to-br from-[rgba(15,22,32,0.95)] via-[rgba(19,21,25,0.95)] to-[rgba(33,23,8,0.95)] shadow-[0_30px_90px_-30px_rgba(0,0,0,0.8)]">
             <div className="text-center max-w-[720px] mx-auto mb-12">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[rgba(232,166,87,0.3)] bg-[rgba(232,166,87,0.1)] text-[#f4c489] text-[12px] font-mono font-semibold uppercase tracking-wider mb-3">
-                03 · NANOAGENT GATEWAY · PAID ENTERPRISE TIER
+                03 · NANOAGENT GATEWAY · PAID · TEAMS
               </div>
               <h2 className="text-[clamp(28px,4.5vw,46px)] font-bold tracking-tight text-[#f3f6fb] m-0 mb-4">
                 One endpoint to govern, secure, and scale team AI.
               </h2>
               <p className="text-[16.5px] leading-relaxed text-[var(--color-text-mut)] m-0">
-                When more than one developer runs AI coding agents, costs spike and visibility vanishes. Put one OpenAI-compatible endpoint in front of your traffic to attribute spend, enforce policies, and audit usage.
+                When more than one developer runs AI coding agents, costs spike and visibility vanishes. Put one endpoint in front of every model your team uses to attribute spend, enforce policies, and audit usage.
               </p>
             </div>
 
-            {/* 5 Governance Pills */}
-            <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-[860px] mx-auto mb-12">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[var(--color-border)] bg-[rgba(25,28,33,0.8)] text-[12.5px] text-[var(--color-text-mut)]">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#e8a657" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" x2="12" y1="2" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
-                <span><strong>Manage $ Spend:</strong> Attribute usage by team, project, person</span>
-              </div>
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[var(--color-border)] bg-[rgba(25,28,33,0.8)] text-[12.5px] text-[var(--color-text-mut)]">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#e8a657" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-                <span><strong>Add Controls:</strong> Set policy and spend limits</span>
-              </div>
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[var(--color-border)] bg-[rgba(25,28,33,0.8)] text-[12.5px] text-[var(--color-text-mut)]">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#e8a657" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-                <span><strong>Govern:</strong> Watch for anomalies as adoption grows</span>
-              </div>
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[var(--color-border)] bg-[rgba(25,28,33,0.8)] text-[12.5px] text-[var(--color-text-mut)]">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#e8a657" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                </svg>
-                <span><strong>Platform:</strong> Single endpoint without client disruption</span>
-              </div>
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[var(--color-border)] bg-[rgba(25,28,33,0.8)] text-[12.5px] text-[var(--color-text-mut)]">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#e8a657" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                </svg>
-                <span><strong>Security:</strong> Secure access &amp; review usage</span>
-              </div>
+            {/* 6 Provider Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10 max-w-[960px] mx-auto">
+              {supportedProviders.map((provider) => (
+                <div
+                  key={provider.name}
+                  className="p-5 rounded-2xl border border-[rgba(232,166,87,0.15)] bg-[rgba(10,12,16,0.7)] hover:border-[rgba(232,166,87,0.4)] transition-all duration-200 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xl" aria-hidden="true">{provider.icon}</span>
+                        <strong className="text-white text-[15px]">{provider.name}</strong>
+                      </div>
+                      <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-[rgba(232,166,87,0.12)] text-[#f4c489] font-semibold">
+                        {provider.badge}
+                      </span>
+                    </div>
+                    <p className="text-[13px] text-[var(--color-text-mut)] font-mono m-0 leading-relaxed">
+                      {provider.sub}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* 3 Value Pillars */}
