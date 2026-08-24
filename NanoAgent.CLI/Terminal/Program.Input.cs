@@ -42,6 +42,12 @@ public static partial class Program
                 continue;
             }
 
+            if (IsVoiceOperationActive(state))
+            {
+                StopVoiceOperation(state);
+                continue;
+            }
+
             if (key.Key == ConsoleKey.C &&
                 key.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
@@ -87,6 +93,12 @@ public static partial class Program
             if (TryHandleGitSidebarKey(state, key))
             {
                 continue;
+            }
+
+            if (IsVoiceDictationKey(key))
+            {
+                StartVoiceDictation(state);
+                return;
             }
 
             if (key.Key == ConsoleKey.V &&
@@ -185,6 +197,17 @@ public static partial class Program
                     likelyPastedInputInBatch = true;
                     pastedLineBreaksInBatch++;
                     continue;
+                }
+
+                if (TryHandleVoiceInputCommand(state))
+                {
+                    return;
+                }
+
+                if (IsVoiceOperationActive(state))
+                {
+                    state.AddSystemMessage("Voice dictation is still in progress.");
+                    return;
                 }
 
                 SubmitInput(state);

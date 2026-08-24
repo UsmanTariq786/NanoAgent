@@ -52,6 +52,14 @@ public partial class MainWindow : Window
 
         e.Handled = true;
 
+        bool isPlainEnter = e.Key == Key.Enter &&
+            !e.KeyModifiers.HasFlag(KeyModifiers.Shift) &&
+            !e.KeyModifiers.HasFlag(KeyModifiers.Control);
+        if (isPlainEnter && await viewModel.Chat.TryHandleVoiceCommandAsync())
+        {
+            return;
+        }
+
         await viewModel.Chat.HandlePromptKeyAsync(
             e.Key,
             e.KeyModifiers,

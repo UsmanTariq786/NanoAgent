@@ -60,12 +60,11 @@ internal sealed class GitHubApplicationUpdateService : IApplicationUpdateService
     {
         ArgumentNullException.ThrowIfNull(updateInfo);
 
-        if (!updateInfo.IsUpdateAvailable)
-        {
-            return new ApplicationUpdateInstallResult(
-                true,
-                $"NanoAgent is already up to date ({updateInfo.CurrentVersion}).");
-        }
+        // Always run the matching release installer when installation is requested.
+        // Besides replacing the CLI, the installer synchronizes NanoAgent.Voice to
+        // the same release. This also lets `/update now` repair a missing or stale
+        // Voice runtime when the CLI itself is already on the latest version.
+        string operation = updateInfo.IsUpdateAvailable ? "update" : "synchronization";
 
         Action<string>? onOutputLine = progress is null
             ? null
@@ -84,8 +83,8 @@ internal sealed class GitHubApplicationUpdateService : IApplicationUpdateService
         if (result.ExitCode == 0)
         {
             string successMessage = OperatingSystem.IsWindows()
-                ? $"NanoAgent update prepared: {updateInfo.LatestVersion}. Exit NanoAgent to finish installation, then restart it to use the new version."
-                : $"NanoAgent update installed: {updateInfo.LatestVersion}. Restart NanoAgent to use the new version.";
+                ? $"NanoAgent and Voice runtime {operation} prepared: {updateInfo.LatestVersion}. Exit NanoAgent to finish installation, then restart it to use the synchronized release."
+                : $"NanoAgent and Voice runtime {operation} installed: {updateInfo.LatestVersion}. Restart NanoAgent to use the synchronized release.";
 
             return new ApplicationUpdateInstallResult(
                 true,
@@ -101,8 +100,8 @@ internal sealed class GitHubApplicationUpdateService : IApplicationUpdateService
         return new ApplicationUpdateInstallResult(
             false,
             string.IsNullOrWhiteSpace(detail)
-                ? $"NanoAgent update failed with exit code {result.ExitCode}. Download it manually from {updateInfo.ReleaseUri}."
-                : $"NanoAgent update failed with exit code {result.ExitCode}: {Truncate(detail, 600)}");
+                ? $"NanoAgent and Voice runtime update failed with exit code {result.ExitCode}. Download the release manually from {updateInfo.ReleaseUri}."
+                : $"NanoAgent and Voice runtime update failed with exit code {result.ExitCode}: {Truncate(detail, 600)}");
     }
 
     private static ProcessExecutionRequest CreateInstallRequest(

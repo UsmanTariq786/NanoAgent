@@ -68,6 +68,11 @@
         "resolved": "18.0.1",
         "contentHash": "O+utSr97NAJowIQT/OVp3Lh9QgW/wALVTP4RG1m2AfFP4IyJmJz0ZBmFJUsRQiAPgq6IRC0t8AAzsiPIsaUDEA=="
       },
+      "Microsoft.Extensions.AI.Abstractions": {
+        "type": "Transitive",
+        "resolved": "10.2.0",
+        "contentHash": "ONGlIBht0ygEdKc0bCt9XWUiq19/460dAu7fCKzPM34OFJSMQIohEDTJwjCJ8vVp8znNakloc9xFF9+R/eDCYQ=="
+      },
       "Microsoft.Extensions.Configuration": {
         "type": "Transitive",
         "resolved": "10.0.0",
@@ -379,6 +384,43 @@
         "resolved": "13.0.3",
         "contentHash": "HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ=="
       },
+      "org.k2fsa.portaudio.runtime.linux-aarch64": {
+        "type": "Transitive",
+        "resolved": "1.0.6",
+        "contentHash": "kha8bJ1Cqte5pe+V+IWK79OVfdgu0jeRFGlAVd1Iw0JBv04X238t7FVR3GPHK2ix7c1Vqb8yJhneEAkVfrEeeQ=="
+      },
+      "org.k2fsa.portaudio.runtime.linux-x64": {
+        "type": "Transitive",
+        "resolved": "1.0.6",
+        "contentHash": "0D0ECSNhKIAGWjrZuDkBS2GGuQD5l+Kqbfg/DSGQYxaVu/6Zc4fCOEf9uTwOHLyaSp3vINWH8Nw68nqctcqtRw=="
+      },
+      "org.k2fsa.portaudio.runtime.osx-arm64": {
+        "type": "Transitive",
+        "resolved": "1.0.6",
+        "contentHash": "BvxoZ5VtvC+R/gZSh5pzOAeoCDd6/1kfO4HKYavpuD179ZCOTwFZF3Zy6x5TDe0smX+NOwqqcHYswTf8IK5U0g=="
+      },
+      "org.k2fsa.portaudio.runtime.osx-x64": {
+        "type": "Transitive",
+        "resolved": "1.0.6",
+        "contentHash": "RuhJuQ1PXD6XEP/C3JqGkBXkYMDrG248Xkfo7TKUj9anOjhEWrf+B+TAuWImwbtPpYOv2v/MC0wDh/E80o/Chw=="
+      },
+      "org.k2fsa.portaudio.runtime.win-x64": {
+        "type": "Transitive",
+        "resolved": "1.0.6",
+        "contentHash": "IUmJ8Nw9G+D09OETUD39GLuFD3+uuZrXhy5iWS6Md0VZVtnKcC2gHweVUyOSIr/MZRLgSA+58PfixFLiIo8YUQ=="
+      },
+      "PortAudioSharp2": {
+        "type": "Transitive",
+        "resolved": "1.0.6",
+        "contentHash": "8wjpXYVi9G0xp04veuOOSqu5YHekf4ZfuC77vESj2Ccv1SJ6SUxk33NEGTzS1No4INNucZ7864hdDCimbKvHqQ==",
+        "dependencies": {
+          "org.k2fsa.portaudio.runtime.linux-aarch64": "1.0.6",
+          "org.k2fsa.portaudio.runtime.linux-x64": "1.0.6",
+          "org.k2fsa.portaudio.runtime.osx-arm64": "1.0.6",
+          "org.k2fsa.portaudio.runtime.osx-x64": "1.0.6",
+          "org.k2fsa.portaudio.runtime.win-x64": "1.0.6"
+        }
+      },
       "Spectre.Console": {
         "type": "Transitive",
         "resolved": "0.54.0",
@@ -393,6 +435,27 @@
         "type": "Transitive",
         "resolved": "10.0.0",
         "contentHash": "qy6C3gQRTrfhFfuiIYU1jNwWfFdJpBVo1BARW7jgMm1zTEm3LRzLLyOLJGaAuKE+nZCGkEP71y4rj9NWjqLGdQ=="
+      },
+      "Whisper.net": {
+        "type": "Transitive",
+        "resolved": "1.9.1",
+        "contentHash": "82WAKyyMun44cAXE80sP7vIra1oYhbVp2WrnqJm0CISTfMAvint1k/umt0SvsQH+IkDyekZ3BgMdS3Rag9SZ5A==",
+        "dependencies": {
+          "Microsoft.Extensions.AI.Abstractions": "10.2.0"
+        }
+      },
+      "Whisper.net.Runtime": {
+        "type": "Transitive",
+        "resolved": "1.9.1",
+        "contentHash": "TipPJkry69VwJ3XL38U082QK5Trqte6NgSOoosuyj/C1eRHabmBbLQ3ujjcDryg5pkXT7wXwAKU5+PxGIJyxkQ==",
+        "dependencies": {
+          "Whisper.net.Runtime.Metal": "1.9.1"
+        }
+      },
+      "Whisper.net.Runtime.Metal": {
+        "type": "Transitive",
+        "resolved": "1.9.1",
+        "contentHash": "Ut5tZyCUwXMVdThoLvdvQ7GyLwjRMreR/p3LuMJvRiXidQ2AXxx2Tv8UOGtMxvL395AC3+IkHdN/kMfd+EPSEw=="
       },
       "xunit.abstractions": {
         "type": "Transitive",
@@ -444,6 +507,14 @@
           "Microsoft.Extensions.Http": "[10.0.0, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.0, )",
           "System.Security.Cryptography.ProtectedData": "[10.0.0, )"
+        }
+      },
+      "nanoagent-voice": {
+        "type": "Project",
+        "dependencies": {
+          "PortAudioSharp2": "[1.0.6, )",
+          "Whisper.net": "[1.9.1, )",
+          "Whisper.net.Runtime": "[1.9.1, )"
         }
       },
       "nanoagent.cli": {
