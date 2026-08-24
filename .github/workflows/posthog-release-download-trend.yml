@@ -3,6 +3,19 @@ name: PostHog GitHub release, npm, NuGet and VS Code Marketplace install trend
 on:
   workflow_dispatch:
     inputs:
+      historical_backfill:
+        description: 'When true, send timestamped backfill events so older download/install data appears in PostHog trends.'
+        required: false
+        default: false
+        type: boolean
+      backfill_start_date:
+        description: 'Optional YYYY-MM-DD start date for npm daily backfill when historical_backfill is enabled. Defaults to the package created date.'
+        required: false
+        type: string
+      backfill_end_date:
+        description: 'Optional YYYY-MM-DD end date for npm daily backfill and aggregate backfill timestamps when historical_backfill is enabled. Defaults to today UTC.'
+        required: false
+        type: string
       npm_package_ids:
         description: 'Comma/newline-separated npm package names to track. Leave blank to use vars.NPM_PACKAGE_IDS.'
         required: false
@@ -29,19 +42,34 @@ jobs:
       POSTHOG_HOST: ${{ vars.POSTHOG_HOST || 'https://us.i.posthog.com' }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       REPOSITORY: ${{ github.repository }}
+      HISTORICAL_BACKFILL: ${{ github.event.inputs.historical_backfill || 'false' }}
+      BACKFILL_START_DATE: ${{ github.event.inputs.backfill_start_date || '' }}
+      BACKFILL_END_DATE: ${{ github.event.inputs.backfill_end_date || '' }}
       NPM_PACKAGE_IDS: ${{ github.event.inputs.npm_package_ids || vars.NPM_PACKAGE_IDS || 'nanoai-cli' }}
-      NUGET_PACKAGE_IDS: ${{ github.event.inputs.nuget_package_ids || vars.NUGET_PACKAGE_IDS || '' }}
+      NUGET_PACKAGE_IDS: ${{ github.event.inputs.nuget_package_ids || vars.NUGET_PACKAGE_IDS || 'NanoAgent' }}
       VSCODE_EXTENSION_IDS: ${{ github.event.inputs.vscode_extension_ids || vars.VSCODE_EXTENSION_IDS || 'getnanoai.nanoagent,getnanoai.nanoagent-vs' }}
     steps:
       - name: Send GitHub release download snapshots to PostHog
         shell: bash
         run: |
           node <<'NODE'
-          const { POSTHOG_PROJECT_API_KEY, POSTHOG_HOST, GITHUB_TOKEN, REPOSITORY } = process.env
+          const {
+            POSTHOG_PROJECT_API_KEY,
+            POSTHOG_HOST,
+            GITHUB_TOKEN,
+            REPOSITORY,
+            HISTORICAL_BACKFILL,
+            BACKFILL_START_DATE,
+            BACKFILL_END_DATE,
+          } = process.env
 
           if (!POSTHOG_PROJECT_API_KEY) {
             throw new Error('Missing required secret: POSTHOG_PROJECT_API_KEY')
           }
+
+          const historicalBackfill = String(HISTORICAL_BACKFILL || '').toLowerCase() === 'true'
+          const historicalCutoffMs = 48 * 60 * 60 * 1000
+          const repositoryDistinctId = `github-release-downloads:${REPOSITORY}`
 
           // Shared identity fields so every event this workflow emits stays
           // uniform (same $lib/CI fields) across the GitHub, npm, and NuGet steps.
@@ -52,6 +80,9 @@ jobs:
             execution_environment: 'ci',
             is_ci: true,
             ci_provider: 'github_actions',
+            ...(historicalBackfill ? { historical_backfill: true } : {}),
+            ...(BACKFILL_START_DATE ? { backfill_start_date: BACKFILL_START_DATE } : {}),
+            ...(BACKFILL_END_DATE ? { backfill_end_date: BACKFILL_END_DATE } : {}),
           }
 
           const githubHeaders = {
@@ -71,7 +102,69 @@ jobs:
             return res.json()
           }
 
-          async function posthogCapture(event, properties) {
+          function normalizeTimestamp(value) {
+            if (!value) return null
+            const timestamp = new Date(value)
+            return Number.isNaN(timestamp.getTime()) ? null : timestamp.toISOString()
+          }
+
+          function utcMidday(value) {
+            return value ? normalizeTimestamp(`${value}T12:00:00.000Z`) : null
+          }
+
+          function isHistoricalMigrationTimestamp(timestamp) {
+            const parsed = Date.parse(timestamp)
+            return Number.isFinite(parsed) && (Date.now() - parsed) >= historicalCutoffMs
+          }
+
+          async function posthogBatchCapture(entries, historicalMigration) {
+            const endpoint = `${POSTHOG_HOST.replace(/\/$/, '')}/batch/`
+            const chunkSize = 100
+
+            for (let start = 0; start < entries.length; start += chunkSize) {
+              const chunk = entries.slice(start, start + chunkSize)
+              const body = {
+                api_key: POSTHOG_PROJECT_API_KEY,
+                batch: chunk.map((entry) => ({
+                  event: entry.event,
+                  properties: {
+                    ...commonProperties,
+                    ...entry.properties,
+                    distinct_id: entry.distinctId,
+                    '$process_person_profile': false,
+                  },
+                  timestamp: entry.timestamp,
+                })),
+              }
+
+              if (historicalMigration) {
+                // PostHog requires historical_migration for events older than 48 hours.
+                body.historical_migration = true
+              }
+
+              const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+              })
+
+              if (!res.ok) {
+                throw new Error(`PostHog batch capture failed ${res.status}: ${await res.text()}`)
+              }
+            }
+          }
+
+          async function posthogCapture(event, properties, distinctId, timestamp) {
+            if (timestamp) {
+              await posthogBatchCapture([{
+                event,
+                properties,
+                distinctId,
+                timestamp,
+              }], isHistoricalMigrationTimestamp(timestamp))
+              return
+            }
+
             const endpoint = `${POSTHOG_HOST.replace(/\/$/, '')}/i/v0/e/`
             const res = await fetch(endpoint, {
               method: 'POST',
@@ -79,7 +172,7 @@ jobs:
               body: JSON.stringify({
                 api_key: POSTHOG_PROJECT_API_KEY,
                 event,
-                distinct_id: `github-release-downloads:${REPOSITORY}`,
+                distinct_id: distinctId,
                 properties: {
                   ...commonProperties,
                   ...properties,
@@ -94,6 +187,13 @@ jobs:
 
           const collectedAt = new Date().toISOString()
           const releases = await githubJson('/releases?per_page=100')
+          const latestReleaseTimestamp = normalizeTimestamp(
+            [...releases]
+              .map((release) => release.published_at)
+              .filter(Boolean)
+              .sort()
+              .slice(-1)[0],
+          )
 
           let repoTotal = 0
           let assetEvents = 0
@@ -101,6 +201,7 @@ jobs:
           for (const release of releases) {
             const assets = await githubJson(`/releases/${release.id}/assets?per_page=100`)
             const releaseTotal = assets.reduce((sum, asset) => sum + (asset.download_count || 0), 0)
+            const releaseTimestamp = historicalBackfill ? normalizeTimestamp(release.published_at) : null
             repoTotal += releaseTotal
 
             await posthogCapture('nanoagent release download snapshot', {
@@ -115,10 +216,14 @@ jobs:
               asset_count: assets.length,
               collected_at: collectedAt,
               snapshot_type: 'release_total',
-            })
+            }, repositoryDistinctId, releaseTimestamp)
 
             for (const asset of assets) {
               assetEvents += 1
+              const assetTimestamp = historicalBackfill
+                ? normalizeTimestamp(asset.created_at || release.published_at)
+                : null
+
               await posthogCapture('nanoagent release asset download snapshot', {
                 repository: REPOSITORY,
                 release_id: release.id,
@@ -134,9 +239,13 @@ jobs:
                 browser_download_url: asset.browser_download_url,
                 collected_at: collectedAt,
                 snapshot_type: 'asset_total',
-              })
+              }, repositoryDistinctId, assetTimestamp)
             }
           }
+
+          const repositoryTimestamp = historicalBackfill
+            ? (utcMidday(BACKFILL_END_DATE) || latestReleaseTimestamp || collectedAt)
+            : null
 
           await posthogCapture('nanoagent repository release download snapshot', {
             repository: REPOSITORY,
@@ -145,7 +254,7 @@ jobs:
             asset_event_count: assetEvents,
             collected_at: collectedAt,
             snapshot_type: 'repository_total',
-          })
+          }, repositoryDistinctId, repositoryTimestamp)
 
           console.log(`Sent ${releases.length} releases, ${assetEvents} assets, ${repoTotal} total GitHub release downloads to PostHog.`)
           NODE
@@ -155,11 +264,22 @@ jobs:
         shell: bash
         run: |
           node <<'NODE'
-          const { POSTHOG_PROJECT_API_KEY, POSTHOG_HOST, REPOSITORY, NUGET_PACKAGE_IDS } = process.env
+          const {
+            POSTHOG_PROJECT_API_KEY,
+            POSTHOG_HOST,
+            REPOSITORY,
+            NUGET_PACKAGE_IDS,
+            HISTORICAL_BACKFILL,
+            BACKFILL_START_DATE,
+            BACKFILL_END_DATE,
+          } = process.env
 
           if (!POSTHOG_PROJECT_API_KEY) {
             throw new Error('Missing required secret: POSTHOG_PROJECT_API_KEY')
           }
+
+          const historicalBackfill = String(HISTORICAL_BACKFILL || '').toLowerCase() === 'true'
+          const historicalCutoffMs = 48 * 60 * 60 * 1000
 
           // Same identity shape as the GitHub release step so every event this
           // workflow emits stays uniform (same $lib/CI fields and event prefix).
@@ -170,6 +290,9 @@ jobs:
             execution_environment: 'ci',
             is_ci: true,
             ci_provider: 'github_actions',
+            ...(historicalBackfill ? { historical_backfill: true } : {}),
+            ...(BACKFILL_START_DATE ? { backfill_start_date: BACKFILL_START_DATE } : {}),
+            ...(BACKFILL_END_DATE ? { backfill_end_date: BACKFILL_END_DATE } : {}),
           }
 
           const packageIds = (NUGET_PACKAGE_IDS || '')
@@ -190,6 +313,27 @@ jobs:
             return res.json()
           }
 
+          function normalizeTimestamp(value) {
+            if (!value) return null
+            const timestamp = new Date(value)
+            return Number.isNaN(timestamp.getTime()) ? null : timestamp.toISOString()
+          }
+
+          function utcMidday(value) {
+            return value ? normalizeTimestamp(`${value}T12:00:00.000Z`) : null
+          }
+
+          function isHistoricalMigrationTimestamp(timestamp) {
+            const parsed = Date.parse(timestamp)
+            return Number.isFinite(parsed) && (Date.now() - parsed) >= historicalCutoffMs
+          }
+
+          function maxTimestamp(left, right) {
+            if (!right) return left
+            if (!left) return right
+            return left > right ? left : right
+          }
+
           async function getNugetSearchEndpoint() {
             const serviceIndex = await json('https://api.nuget.org/v3/index.json')
             const preferredTypes = [
@@ -204,7 +348,72 @@ jobs:
             throw new Error('NuGet SearchQueryService endpoint was not found in the NuGet service index.')
           }
 
-          async function posthogCapture(event, properties, distinctId) {
+          async function getNugetRegistration(packageId) {
+            const rootUrl = `https://api.nuget.org/v3/registration5-semver1/${encodeURIComponent(packageId.toLowerCase())}/index.json`
+            const root = await json(rootUrl, { headers: { Accept: 'application/json' } })
+            const leaves = []
+
+            for (const page of Array.isArray(root.items) ? root.items : []) {
+              const pageData = Array.isArray(page.items)
+                ? page
+                : await json(page['@id'], { headers: { Accept: 'application/json' } })
+
+              for (const item of Array.isArray(pageData.items) ? pageData.items : []) {
+                leaves.push(item)
+              }
+            }
+
+            return { root, leaves, rootUrl }
+          }
+
+          async function posthogBatchCapture(entries, historicalMigration) {
+            const endpoint = `${POSTHOG_HOST.replace(/\/$/, '')}/batch/`
+            const chunkSize = 100
+
+            for (let start = 0; start < entries.length; start += chunkSize) {
+              const chunk = entries.slice(start, start + chunkSize)
+              const body = {
+                api_key: POSTHOG_PROJECT_API_KEY,
+                batch: chunk.map((entry) => ({
+                  event: entry.event,
+                  properties: {
+                    ...commonProperties,
+                    ...entry.properties,
+                    distinct_id: entry.distinctId,
+                    '$process_person_profile': false,
+                  },
+                  timestamp: entry.timestamp,
+                })),
+              }
+
+              if (historicalMigration) {
+                // PostHog requires historical_migration for events older than 48 hours.
+                body.historical_migration = true
+              }
+
+              const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+              })
+
+              if (!res.ok) {
+                throw new Error(`PostHog batch capture failed ${res.status}: ${await res.text()}`)
+              }
+            }
+          }
+
+          async function posthogCapture(event, properties, distinctId, timestamp) {
+            if (timestamp) {
+              await posthogBatchCapture([{
+                event,
+                properties,
+                distinctId,
+                timestamp,
+              }], isHistoricalMigrationTimestamp(timestamp))
+              return
+            }
+
             const endpoint = `${POSTHOG_HOST.replace(/\/$/, '')}/i/v0/e/`
             const res = await fetch(endpoint, {
               method: 'POST',
@@ -231,13 +440,23 @@ jobs:
           let trackedPackages = 0
           let totalDownloads = 0
           let totalVersionEvents = 0
+          let latestTrackedTimestamp = null
 
           for (const configuredPackageId of packageIds) {
             const url = `${searchEndpoint}?q=${encodeURIComponent(configuredPackageId)}&take=20&prerelease=true&semVerLevel=2.0.0`
-            const result = await json(url, { headers: { Accept: 'application/json' } })
+            const [result, registrationResult] = await Promise.all([
+              json(url, { headers: { Accept: 'application/json' } }),
+              getNugetRegistration(configuredPackageId).catch((error) => ({
+                error,
+                root: null,
+                leaves: [],
+                rootUrl: `https://api.nuget.org/v3/registration5-semver1/${encodeURIComponent(configuredPackageId.toLowerCase())}/index.json`,
+              })),
+            ])
             const packageResult = (result.data || []).find(
               (entry) => String(entry.id || '').toLowerCase() === configuredPackageId.toLowerCase(),
             )
+            const fallbackTimestamp = historicalBackfill ? (utcMidday(BACKFILL_END_DATE) || collectedAt) : null
 
             if (!packageResult) {
               await posthogCapture('nanoagent nuget package lookup failed', {
@@ -245,7 +464,7 @@ jobs:
                 package_id: configuredPackageId,
                 collected_at: collectedAt,
                 snapshot_type: 'lookup_failed',
-              }, `nuget-package:${configuredPackageId.toLowerCase()}`)
+              }, `nuget-package:${configuredPackageId.toLowerCase()}`, fallbackTimestamp)
               console.warn(`NuGet package was not found: ${configuredPackageId}`)
               continue
             }
@@ -254,10 +473,43 @@ jobs:
             const packageTotalDownloads = Number(packageResult.totalDownloads || 0)
             const versions = Array.isArray(packageResult.versions) ? packageResult.versions : []
             const latestVersion = packageResult.version || (versions.length ? versions[versions.length - 1].version : null)
+            const versionDownloads = new Map(
+              versions.map((versionInfo) => [String(versionInfo.version), Number(versionInfo.downloads || 0)]),
+            )
+            const registrationLeaves = Array.isArray(registrationResult.leaves) ? registrationResult.leaves : []
+            const versionEntries = registrationLeaves.length > 0
+              ? registrationLeaves.map((leaf) => {
+                  const catalogEntry = leaf.catalogEntry || {}
+                  const version = catalogEntry.version || leaf.version
+                  const publishedAt = normalizeTimestamp(catalogEntry.published || leaf.commitTimeStamp)
+                  return {
+                    catalogEntry,
+                    publishedAt,
+                    version,
+                    downloads: versionDownloads.get(String(version)) || 0,
+                  }
+                })
+              : versions.map((versionInfo) => ({
+                  catalogEntry: {},
+                  publishedAt: null,
+                  version: versionInfo.version,
+                  downloads: Number(versionInfo.downloads || 0),
+                }))
+
+            let latestPublishedAt = null
+            for (const versionEntry of versionEntries) {
+              latestPublishedAt = maxTimestamp(latestPublishedAt, versionEntry.publishedAt)
+            }
+
+            const packageDistinctId = `nuget-package:${packageId.toLowerCase()}`
+            const packageTimestamp = historicalBackfill
+              ? (utcMidday(BACKFILL_END_DATE) || latestPublishedAt || fallbackTimestamp)
+              : null
 
             trackedPackages += 1
             totalDownloads += packageTotalDownloads
-            totalVersionEvents += versions.length
+            totalVersionEvents += versionEntries.length
+            latestTrackedTimestamp = maxTimestamp(latestTrackedTimestamp, packageTimestamp)
 
             await posthogCapture('nanoagent nuget package install snapshot', {
               repository: REPOSITORY,
@@ -272,23 +524,34 @@ jobs:
               package_authors: packageResult.authors || [],
               package_owners: packageResult.owners || [],
               latest_version: latestVersion,
+              latest_version_published_at: latestPublishedAt,
+              package_registration_url: registrationResult.rootUrl || null,
               package_total_downloads: packageTotalDownloads,
-              package_version_count: versions.length,
+              package_version_count: versionEntries.length,
               collected_at: collectedAt,
               snapshot_type: 'package_total',
-            }, `nuget-package:${packageId.toLowerCase()}`)
+            }, packageDistinctId, packageTimestamp)
 
-            for (const versionInfo of versions) {
+            for (const versionEntry of versionEntries) {
+              const versionTimestamp = historicalBackfill
+                ? (versionEntry.publishedAt || packageTimestamp)
+                : null
+
               await posthogCapture('nanoagent nuget package version install snapshot', {
                 repository: REPOSITORY,
                 package_id: packageId,
-                package_version: versionInfo.version,
-                package_version_downloads: Number(versionInfo.downloads || 0),
+                package_version: versionEntry.version,
+                package_version_downloads: versionEntry.downloads,
+                package_version_published_at: versionEntry.publishedAt,
                 collected_at: collectedAt,
                 snapshot_type: 'version_total',
-              }, `nuget-package:${packageId.toLowerCase()}`)
+              }, packageDistinctId, versionTimestamp)
             }
           }
+
+          const trackedPackagesTimestamp = historicalBackfill
+            ? (utcMidday(BACKFILL_END_DATE) || latestTrackedTimestamp || collectedAt)
+            : null
 
           await posthogCapture('nanoagent nuget tracked packages install snapshot', {
             repository: REPOSITORY,
@@ -298,7 +561,7 @@ jobs:
             package_total_downloads: totalDownloads,
             collected_at: collectedAt,
             snapshot_type: 'tracked_packages_total',
-          }, `nuget-packages:${REPOSITORY}`)
+          }, `nuget-packages:${REPOSITORY}`, trackedPackagesTimestamp)
 
           console.log(`Sent NuGet snapshots for ${trackedPackages} packages, ${totalVersionEvents} versions, ${totalDownloads} total downloads to PostHog.`)
           NODE
@@ -308,11 +571,22 @@ jobs:
         shell: bash
         run: |
           node <<'NODE'
-          const { POSTHOG_PROJECT_API_KEY, POSTHOG_HOST, REPOSITORY, NPM_PACKAGE_IDS } = process.env
+          const {
+            POSTHOG_PROJECT_API_KEY,
+            POSTHOG_HOST,
+            REPOSITORY,
+            NPM_PACKAGE_IDS,
+            HISTORICAL_BACKFILL,
+            BACKFILL_START_DATE,
+            BACKFILL_END_DATE,
+          } = process.env
 
           if (!POSTHOG_PROJECT_API_KEY) {
             throw new Error('Missing required secret: POSTHOG_PROJECT_API_KEY')
           }
+
+          const historicalBackfill = String(HISTORICAL_BACKFILL || '').toLowerCase() === 'true'
+          const historicalCutoffMs = 48 * 60 * 60 * 1000
 
           // Same identity shape as the GitHub release, NuGet, and VS Code steps
           // so every event this workflow emits stays uniform (same $lib/CI fields).
@@ -323,6 +597,9 @@ jobs:
             execution_environment: 'ci',
             is_ci: true,
             ci_provider: 'github_actions',
+            ...(historicalBackfill ? { historical_backfill: true } : {}),
+            ...(BACKFILL_START_DATE ? { backfill_start_date: BACKFILL_START_DATE } : {}),
+            ...(BACKFILL_END_DATE ? { backfill_end_date: BACKFILL_END_DATE } : {}),
           }
 
           const packageIds = (NPM_PACKAGE_IDS || '')
@@ -343,7 +620,86 @@ jobs:
             return res.json()
           }
 
-          async function posthogCapture(event, properties, distinctId) {
+          function normalizeTimestamp(value) {
+            if (!value) return null
+            const timestamp = new Date(value)
+            return Number.isNaN(timestamp.getTime()) ? null : timestamp.toISOString()
+          }
+
+          function utcMidday(value) {
+            return value ? normalizeTimestamp(`${value}T12:00:00.000Z`) : null
+          }
+
+          function isHistoricalMigrationTimestamp(timestamp) {
+            const parsed = Date.parse(timestamp)
+            return Number.isFinite(parsed) && (Date.now() - parsed) >= historicalCutoffMs
+          }
+
+          function shiftDate(value, days) {
+            const date = new Date(`${value}T00:00:00.000Z`)
+            if (Number.isNaN(date.getTime())) {
+              throw new Error(`Invalid date: ${value}`)
+            }
+            date.setUTCDate(date.getUTCDate() + days)
+            return date.toISOString().slice(0, 10)
+          }
+
+          function rollingWindowSum(rows, endIndex, windowSize) {
+            let total = 0
+            for (let index = Math.max(0, endIndex - windowSize + 1); index <= endIndex; index += 1) {
+              total += rows[index].downloads
+            }
+            return total
+          }
+
+          async function posthogBatchCapture(entries, historicalMigration) {
+            const endpoint = `${POSTHOG_HOST.replace(/\/$/, '')}/batch/`
+            const chunkSize = 100
+
+            for (let start = 0; start < entries.length; start += chunkSize) {
+              const chunk = entries.slice(start, start + chunkSize)
+              const body = {
+                api_key: POSTHOG_PROJECT_API_KEY,
+                batch: chunk.map((entry) => ({
+                  event: entry.event,
+                  properties: {
+                    ...commonProperties,
+                    ...entry.properties,
+                    distinct_id: entry.distinctId,
+                    '$process_person_profile': false,
+                  },
+                  timestamp: entry.timestamp,
+                })),
+              }
+
+              if (historicalMigration) {
+                // PostHog requires historical_migration for events older than 48 hours.
+                body.historical_migration = true
+              }
+
+              const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+              })
+
+              if (!res.ok) {
+                throw new Error(`PostHog batch capture failed ${res.status}: ${await res.text()}`)
+              }
+            }
+          }
+
+          async function posthogCapture(event, properties, distinctId, timestamp) {
+            if (timestamp) {
+              await posthogBatchCapture([{
+                event,
+                properties,
+                distinctId,
+                timestamp,
+              }], isHistoricalMigrationTimestamp(timestamp))
+              return
+            }
+
             const endpoint = `${POSTHOG_HOST.replace(/\/$/, '')}/i/v0/e/`
             const res = await fetch(endpoint, {
               method: 'POST',
@@ -382,6 +738,15 @@ jobs:
             })
           }
 
+          async function npmDownloadsRange(packageId, startDate, endDate) {
+            return json(`https://api.npmjs.org/downloads/range/${startDate}:${endDate}/${encodeURIComponent(packageId)}`, {
+              headers: {
+                Accept: 'application/json',
+                'User-Agent': 'posthog-release-and-nuget-trend',
+              },
+            })
+          }
+
           function isoDate(value) {
             return new Date(value).toISOString().slice(0, 10)
           }
@@ -389,96 +754,230 @@ jobs:
           const collectedAt = new Date().toISOString()
           const collectedDate = isoDate(collectedAt)
 
-          let trackedPackages = 0
-          let totalDownloads = 0
-          let totalLastDayDownloads = 0
-          let totalLastWeekDownloads = 0
-          let totalLastMonthDownloads = 0
+          if (historicalBackfill) {
+            const trackedSnapshotsByDay = new Map()
+            let trackedPackages = 0
+            let packageDayEvents = 0
 
-          for (const configuredPackageId of packageIds) {
-            let metadata
-            try {
-              metadata = await npmRegistryPackage(configuredPackageId)
-            } catch (error) {
-              await posthogCapture('nanoagent npm package lookup failed', {
-                repository: REPOSITORY,
-                package_id: configuredPackageId,
-                collected_at: collectedAt,
-                snapshot_type: 'lookup_failed',
-                lookup_error: error.message,
-              }, `npm-package:${configuredPackageId.toLowerCase()}`)
-              console.warn(`npm package was not found: ${configuredPackageId}`)
-              continue
+            for (const configuredPackageId of packageIds) {
+              let metadata
+              try {
+                metadata = await npmRegistryPackage(configuredPackageId)
+              } catch (error) {
+                await posthogCapture('nanoagent npm package lookup failed', {
+                  repository: REPOSITORY,
+                  package_id: configuredPackageId,
+                  collected_at: collectedAt,
+                  snapshot_type: 'lookup_failed',
+                  lookup_error: error.message,
+                }, `npm-package:${configuredPackageId.toLowerCase()}`, utcMidday(BACKFILL_END_DATE || collectedDate) || collectedAt)
+                console.warn(`npm package was not found: ${configuredPackageId}`)
+                continue
+              }
+
+              const packageId = metadata.name || configuredPackageId
+              const latestVersion = metadata['dist-tags'] && metadata['dist-tags'].latest
+              const latestManifest = latestVersion && metadata.versions ? metadata.versions[latestVersion] : null
+              const createdAt = metadata.time && metadata.time.created ? metadata.time.created : collectedAt
+              const modifiedAt = metadata.time && metadata.time.modified ? metadata.time.modified : createdAt
+              const publishedAt =
+                latestVersion && metadata.time && metadata.time[latestVersion]
+                  ? metadata.time[latestVersion]
+                  : createdAt
+              const createdDate = isoDate(createdAt)
+              const effectiveStartDate = (BACKFILL_START_DATE && BACKFILL_START_DATE > createdDate)
+                ? BACKFILL_START_DATE
+                : createdDate
+              const effectiveEndDate = BACKFILL_END_DATE || collectedDate
+
+              if (effectiveStartDate > effectiveEndDate) {
+                console.warn(`Skipping npm backfill for ${packageId}: ${effectiveStartDate} is after ${effectiveEndDate}.`)
+                continue
+              }
+
+              const rangeResult = await npmDownloadsRange(packageId, effectiveStartDate, effectiveEndDate)
+              const rows = Array.isArray(rangeResult.downloads)
+                ? rangeResult.downloads.map((entry) => ({
+                    day: entry.day,
+                    downloads: Number(entry.downloads || 0),
+                  }))
+                : []
+
+              if (rows.length === 0) {
+                console.warn(`No npm daily download rows were returned for ${packageId} in ${effectiveStartDate}:${effectiveEndDate}.`)
+                continue
+              }
+
+              let cumulativeDownloads = 0
+              if (effectiveStartDate > createdDate) {
+                const baselineResult = await npmDownloads(packageId, `${createdDate}:${shiftDate(effectiveStartDate, -1)}`)
+                cumulativeDownloads = Number(baselineResult.downloads || 0)
+              }
+
+              trackedPackages += 1
+              const packageDistinctId = `npm-package:${packageId.toLowerCase()}`
+
+              for (let index = 0; index < rows.length; index += 1) {
+                const row = rows[index]
+                cumulativeDownloads += row.downloads
+                const downloadsLastWeek = rollingWindowSum(rows, index, 7)
+                const downloadsLastMonth = rollingWindowSum(rows, index, 30)
+                const timestamp = utcMidday(row.day) || collectedAt
+
+                await posthogCapture('nanoagent npm package install snapshot', {
+                  repository: REPOSITORY,
+                  package_id: packageId,
+                  package_description: latestManifest && latestManifest.description ? latestManifest.description : null,
+                  package_homepage: latestManifest && latestManifest.homepage ? latestManifest.homepage : null,
+                  package_license: latestManifest && latestManifest.license ? latestManifest.license : null,
+                  package_keywords: latestManifest && Array.isArray(latestManifest.keywords) ? latestManifest.keywords : [],
+                  package_repository_url:
+                    latestManifest && latestManifest.repository && latestManifest.repository.url
+                      ? latestManifest.repository.url
+                      : null,
+                  package_maintainers: Array.isArray(metadata.maintainers)
+                    ? metadata.maintainers.map((maintainer) => maintainer.name).filter(Boolean)
+                    : [],
+                  latest_version: latestVersion || null,
+                  published_at: publishedAt,
+                  created_at: createdAt,
+                  modified_at: modifiedAt,
+                  package_total_downloads: cumulativeDownloads,
+                  package_total_downloads_start: createdDate,
+                  package_total_downloads_end: row.day,
+                  downloads_last_day: row.downloads,
+                  downloads_last_week: downloadsLastWeek,
+                  downloads_last_month: downloadsLastMonth,
+                  collected_at: collectedAt,
+                  snapshot_type: 'package_total',
+                }, packageDistinctId, timestamp)
+
+                const trackedSnapshot = trackedSnapshotsByDay.get(row.day) || {
+                  package_total_downloads: 0,
+                  downloads_last_day: 0,
+                  downloads_last_week: 0,
+                  downloads_last_month: 0,
+                }
+
+                trackedSnapshot.package_total_downloads += cumulativeDownloads
+                trackedSnapshot.downloads_last_day += row.downloads
+                trackedSnapshot.downloads_last_week += downloadsLastWeek
+                trackedSnapshot.downloads_last_month += downloadsLastMonth
+                trackedSnapshotsByDay.set(row.day, trackedSnapshot)
+                packageDayEvents += 1
+              }
             }
 
-            const packageId = metadata.name || configuredPackageId
-            const latestVersion = metadata['dist-tags'] && metadata['dist-tags'].latest
-            const latestManifest = latestVersion && metadata.versions ? metadata.versions[latestVersion] : null
-            const createdAt = metadata.time && metadata.time.created ? metadata.time.created : collectedAt
-            const modifiedAt = metadata.time && metadata.time.modified ? metadata.time.modified : createdAt
-            const publishedAt =
-              latestVersion && metadata.time && metadata.time[latestVersion]
-                ? metadata.time[latestVersion]
-                : createdAt
+            const trackedDays = [...trackedSnapshotsByDay.keys()].sort()
 
-            const totalDownloadsResult = await npmDownloads(packageId, `${isoDate(createdAt)}:${collectedDate}`)
-            const lastDayDownloadsResult = await npmDownloads(packageId, 'last-day')
-            const lastWeekDownloadsResult = await npmDownloads(packageId, 'last-week')
-            const lastMonthDownloadsResult = await npmDownloads(packageId, 'last-month')
+            for (const day of trackedDays) {
+              const snapshot = trackedSnapshotsByDay.get(day)
+              await posthogCapture('nanoagent npm tracked packages install snapshot', {
+                repository: REPOSITORY,
+                package_ids: packageIds,
+                tracked_package_count: trackedPackages,
+                package_total_downloads: snapshot.package_total_downloads,
+                downloads_last_day: snapshot.downloads_last_day,
+                downloads_last_week: snapshot.downloads_last_week,
+                downloads_last_month: snapshot.downloads_last_month,
+                collected_at: collectedAt,
+                snapshot_type: 'tracked_packages_total',
+              }, `npm-packages:${REPOSITORY}`, utcMidday(day) || collectedAt)
+            }
 
-            const packageTotalDownloads = Number(totalDownloadsResult.downloads || 0)
-            const packageLastDayDownloads = Number(lastDayDownloadsResult.downloads || 0)
-            const packageLastWeekDownloads = Number(lastWeekDownloadsResult.downloads || 0)
-            const packageLastMonthDownloads = Number(lastMonthDownloadsResult.downloads || 0)
+            console.log(`Sent npm historical backfill snapshots for ${trackedPackages} packages across ${trackedDays.length} days (${packageDayEvents} package-day events).`)
+          } else {
+            let trackedPackages = 0
+            let totalDownloads = 0
+            let totalLastDayDownloads = 0
+            let totalLastWeekDownloads = 0
+            let totalLastMonthDownloads = 0
 
-            trackedPackages += 1
-            totalDownloads += packageTotalDownloads
-            totalLastDayDownloads += packageLastDayDownloads
-            totalLastWeekDownloads += packageLastWeekDownloads
-            totalLastMonthDownloads += packageLastMonthDownloads
+            for (const configuredPackageId of packageIds) {
+              let metadata
+              try {
+                metadata = await npmRegistryPackage(configuredPackageId)
+              } catch (error) {
+                await posthogCapture('nanoagent npm package lookup failed', {
+                  repository: REPOSITORY,
+                  package_id: configuredPackageId,
+                  collected_at: collectedAt,
+                  snapshot_type: 'lookup_failed',
+                  lookup_error: error.message,
+                }, `npm-package:${configuredPackageId.toLowerCase()}`)
+                console.warn(`npm package was not found: ${configuredPackageId}`)
+                continue
+              }
 
-            await posthogCapture('nanoagent npm package install snapshot', {
+              const packageId = metadata.name || configuredPackageId
+              const latestVersion = metadata['dist-tags'] && metadata['dist-tags'].latest
+              const latestManifest = latestVersion && metadata.versions ? metadata.versions[latestVersion] : null
+              const createdAt = metadata.time && metadata.time.created ? metadata.time.created : collectedAt
+              const modifiedAt = metadata.time && metadata.time.modified ? metadata.time.modified : createdAt
+              const publishedAt =
+                latestVersion && metadata.time && metadata.time[latestVersion]
+                  ? metadata.time[latestVersion]
+                  : createdAt
+
+              const totalDownloadsResult = await npmDownloads(packageId, `${isoDate(createdAt)}:${collectedDate}`)
+              const lastDayDownloadsResult = await npmDownloads(packageId, 'last-day')
+              const lastWeekDownloadsResult = await npmDownloads(packageId, 'last-week')
+              const lastMonthDownloadsResult = await npmDownloads(packageId, 'last-month')
+
+              const packageTotalDownloads = Number(totalDownloadsResult.downloads || 0)
+              const packageLastDayDownloads = Number(lastDayDownloadsResult.downloads || 0)
+              const packageLastWeekDownloads = Number(lastWeekDownloadsResult.downloads || 0)
+              const packageLastMonthDownloads = Number(lastMonthDownloadsResult.downloads || 0)
+
+              trackedPackages += 1
+              totalDownloads += packageTotalDownloads
+              totalLastDayDownloads += packageLastDayDownloads
+              totalLastWeekDownloads += packageLastWeekDownloads
+              totalLastMonthDownloads += packageLastMonthDownloads
+
+              await posthogCapture('nanoagent npm package install snapshot', {
+                repository: REPOSITORY,
+                package_id: packageId,
+                package_description: latestManifest && latestManifest.description ? latestManifest.description : null,
+                package_homepage: latestManifest && latestManifest.homepage ? latestManifest.homepage : null,
+                package_license: latestManifest && latestManifest.license ? latestManifest.license : null,
+                package_keywords: latestManifest && Array.isArray(latestManifest.keywords) ? latestManifest.keywords : [],
+                package_repository_url:
+                  latestManifest && latestManifest.repository && latestManifest.repository.url
+                    ? latestManifest.repository.url
+                    : null,
+                package_maintainers: Array.isArray(metadata.maintainers)
+                  ? metadata.maintainers.map((maintainer) => maintainer.name).filter(Boolean)
+                  : [],
+                latest_version: latestVersion || null,
+                published_at: publishedAt,
+                created_at: createdAt,
+                modified_at: modifiedAt,
+                package_total_downloads: packageTotalDownloads,
+                package_total_downloads_start: totalDownloadsResult.start || isoDate(createdAt),
+                package_total_downloads_end: totalDownloadsResult.end || collectedDate,
+                downloads_last_day: packageLastDayDownloads,
+                downloads_last_week: packageLastWeekDownloads,
+                downloads_last_month: packageLastMonthDownloads,
+                collected_at: collectedAt,
+                snapshot_type: 'package_total',
+              }, `npm-package:${packageId.toLowerCase()}`)
+            }
+
+            await posthogCapture('nanoagent npm tracked packages install snapshot', {
               repository: REPOSITORY,
-              package_id: packageId,
-              package_description: latestManifest && latestManifest.description ? latestManifest.description : null,
-              package_homepage: latestManifest && latestManifest.homepage ? latestManifest.homepage : null,
-              package_license: latestManifest && latestManifest.license ? latestManifest.license : null,
-              package_keywords: latestManifest && Array.isArray(latestManifest.keywords) ? latestManifest.keywords : [],
-              package_repository_url:
-                latestManifest && latestManifest.repository && latestManifest.repository.url
-                  ? latestManifest.repository.url
-                  : null,
-              package_maintainers: Array.isArray(metadata.maintainers)
-                ? metadata.maintainers.map((maintainer) => maintainer.name).filter(Boolean)
-                : [],
-              latest_version: latestVersion || null,
-              published_at: publishedAt,
-              created_at: createdAt,
-              modified_at: modifiedAt,
-              package_total_downloads: packageTotalDownloads,
-              package_total_downloads_start: totalDownloadsResult.start || isoDate(createdAt),
-              package_total_downloads_end: totalDownloadsResult.end || collectedDate,
-              downloads_last_day: packageLastDayDownloads,
-              downloads_last_week: packageLastWeekDownloads,
-              downloads_last_month: packageLastMonthDownloads,
+              package_ids: packageIds,
+              tracked_package_count: trackedPackages,
+              package_total_downloads: totalDownloads,
+              downloads_last_day: totalLastDayDownloads,
+              downloads_last_week: totalLastWeekDownloads,
+              downloads_last_month: totalLastMonthDownloads,
               collected_at: collectedAt,
-              snapshot_type: 'package_total',
-            }, `npm-package:${packageId.toLowerCase()}`)
+              snapshot_type: 'tracked_packages_total',
+            }, `npm-packages:${REPOSITORY}`)
+
+            console.log(`Sent npm snapshots for ${trackedPackages} packages, ${totalDownloads} total downloads, ${totalLastWeekDownloads} last-week downloads to PostHog.`)
           }
-
-          await posthogCapture('nanoagent npm tracked packages install snapshot', {
-            repository: REPOSITORY,
-            package_ids: packageIds,
-            tracked_package_count: trackedPackages,
-            package_total_downloads: totalDownloads,
-            downloads_last_day: totalLastDayDownloads,
-            downloads_last_week: totalLastWeekDownloads,
-            downloads_last_month: totalLastMonthDownloads,
-            collected_at: collectedAt,
-            snapshot_type: 'tracked_packages_total',
-          }, `npm-packages:${REPOSITORY}`)
-
-          console.log(`Sent npm snapshots for ${trackedPackages} packages, ${totalDownloads} total downloads, ${totalLastWeekDownloads} last-week downloads to PostHog.`)
           NODE
 
       - name: Send VS Code Marketplace extension install snapshots to PostHog
@@ -486,11 +985,22 @@ jobs:
         shell: bash
         run: |
           node <<'NODE'
-          const { POSTHOG_PROJECT_API_KEY, POSTHOG_HOST, REPOSITORY, VSCODE_EXTENSION_IDS } = process.env
+          const {
+            POSTHOG_PROJECT_API_KEY,
+            POSTHOG_HOST,
+            REPOSITORY,
+            VSCODE_EXTENSION_IDS,
+            HISTORICAL_BACKFILL,
+            BACKFILL_START_DATE,
+            BACKFILL_END_DATE,
+          } = process.env
 
           if (!POSTHOG_PROJECT_API_KEY) {
             throw new Error('Missing required secret: POSTHOG_PROJECT_API_KEY')
           }
+
+          const historicalBackfill = String(HISTORICAL_BACKFILL || '').toLowerCase() === 'true'
+          const historicalCutoffMs = 48 * 60 * 60 * 1000
 
           // Same identity shape as the GitHub release and NuGet steps so every
           // event this workflow emits stays uniform (same $lib/CI fields).
@@ -501,6 +1011,9 @@ jobs:
             execution_environment: 'ci',
             is_ci: true,
             ci_provider: 'github_actions',
+            ...(historicalBackfill ? { historical_backfill: true } : {}),
+            ...(BACKFILL_START_DATE ? { backfill_start_date: BACKFILL_START_DATE } : {}),
+            ...(BACKFILL_END_DATE ? { backfill_end_date: BACKFILL_END_DATE } : {}),
           }
 
           const extensionIds = (VSCODE_EXTENSION_IDS || '')
@@ -513,7 +1026,75 @@ jobs:
             process.exit(0)
           }
 
-          async function posthogCapture(event, properties, distinctId) {
+          function normalizeTimestamp(value) {
+            if (!value) return null
+            const timestamp = new Date(value)
+            return Number.isNaN(timestamp.getTime()) ? null : timestamp.toISOString()
+          }
+
+          function utcMidday(value) {
+            return value ? normalizeTimestamp(`${value}T12:00:00.000Z`) : null
+          }
+
+          function isHistoricalMigrationTimestamp(timestamp) {
+            const parsed = Date.parse(timestamp)
+            return Number.isFinite(parsed) && (Date.now() - parsed) >= historicalCutoffMs
+          }
+
+          function maxTimestamp(left, right) {
+            if (!right) return left
+            if (!left) return right
+            return left > right ? left : right
+          }
+
+          async function posthogBatchCapture(entries, historicalMigration) {
+            const endpoint = `${POSTHOG_HOST.replace(/\/$/, '')}/batch/`
+            const chunkSize = 100
+
+            for (let start = 0; start < entries.length; start += chunkSize) {
+              const chunk = entries.slice(start, start + chunkSize)
+              const body = {
+                api_key: POSTHOG_PROJECT_API_KEY,
+                batch: chunk.map((entry) => ({
+                  event: entry.event,
+                  properties: {
+                    ...commonProperties,
+                    ...entry.properties,
+                    distinct_id: entry.distinctId,
+                    '$process_person_profile': false,
+                  },
+                  timestamp: entry.timestamp,
+                })),
+              }
+
+              if (historicalMigration) {
+                // PostHog requires historical_migration for events older than 48 hours.
+                body.historical_migration = true
+              }
+
+              const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+              })
+
+              if (!res.ok) {
+                throw new Error(`PostHog batch capture failed ${res.status}: ${await res.text()}`)
+              }
+            }
+          }
+
+          async function posthogCapture(event, properties, distinctId, timestamp) {
+            if (timestamp) {
+              await posthogBatchCapture([{
+                event,
+                properties,
+                distinctId,
+                timestamp,
+              }], isHistoricalMigrationTimestamp(timestamp))
+              return
+            }
+
             const endpoint = `${POSTHOG_HOST.replace(/\/$/, '')}/i/v0/e/`
             const res = await fetch(endpoint, {
               method: 'POST',
@@ -564,9 +1145,11 @@ jobs:
 
           let trackedExtensions = 0
           let totalInstalls = 0
+          let latestTrackedTimestamp = null
 
           for (const configuredExtensionId of extensionIds) {
             const extension = await queryExtension(configuredExtensionId)
+            const fallbackTimestamp = historicalBackfill ? (utcMidday(BACKFILL_END_DATE) || collectedAt) : null
 
             if (!extension) {
               await posthogCapture('nanoagent vscode extension lookup failed', {
@@ -574,7 +1157,7 @@ jobs:
                 extension_id: configuredExtensionId,
                 collected_at: collectedAt,
                 snapshot_type: 'lookup_failed',
-              }, `vscode-extension:${configuredExtensionId.toLowerCase()}`)
+              }, `vscode-extension:${configuredExtensionId.toLowerCase()}`, fallbackTimestamp)
               console.warn(`VS Code extension was not found: ${configuredExtensionId}`)
               continue
             }
@@ -589,9 +1172,13 @@ jobs:
             const installCount = Number(statMap.install || 0)
             const versions = Array.isArray(extension.versions) ? extension.versions : []
             const latestVersion = versions.length ? versions[0].version : null
+            const extensionTimestamp = historicalBackfill
+              ? (normalizeTimestamp(extension.publishedDate) || fallbackTimestamp)
+              : null
 
             trackedExtensions += 1
             totalInstalls += installCount
+            latestTrackedTimestamp = maxTimestamp(latestTrackedTimestamp, extensionTimestamp)
 
             await posthogCapture('nanoagent vscode extension install snapshot', {
               repository: REPOSITORY,
@@ -614,8 +1201,12 @@ jobs:
               trending_monthly: Number(statMap.trendingmonthly || 0),
               collected_at: collectedAt,
               snapshot_type: 'extension_total',
-            }, `vscode-extension:${fullExtensionId.toLowerCase()}`)
+            }, `vscode-extension:${fullExtensionId.toLowerCase()}`, extensionTimestamp)
           }
+
+          const trackedExtensionsTimestamp = historicalBackfill
+            ? (utcMidday(BACKFILL_END_DATE) || latestTrackedTimestamp || collectedAt)
+            : null
 
           await posthogCapture('nanoagent vscode tracked extensions install snapshot', {
             repository: REPOSITORY,
@@ -624,7 +1215,7 @@ jobs:
             extension_total_installs: totalInstalls,
             collected_at: collectedAt,
             snapshot_type: 'tracked_extensions_total',
-          }, `vscode-extensions:${REPOSITORY}`)
+          }, `vscode-extensions:${REPOSITORY}`, trackedExtensionsTimestamp)
 
           console.log(`Sent VS Code Marketplace snapshots for ${trackedExtensions} extensions, ${totalInstalls} total installs to PostHog.`)
           NODE
