@@ -169,7 +169,7 @@ export const footerColumns: FooterColumn[] = [
     links: [
       { label: "NanoAgent (Core)", href: "/agent" },
       { label: "NanoForge (Builder)", href: "/nanoforge" },
-      { label: "Gateway (Enterprise)", href: "/gateway" },
+      { label: "Gateway (Teams)", href: "/gateway" },
       { label: "Pricing & Plans", href: "/gateway#pricing" },
       { label: "All Features", href: "/features" },
     ],

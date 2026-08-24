@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
+import Link from "next/link";
 import Container from "@/components/ui/Container";
 import Button from "@/components/ui/Button";
 import { siteConfig } from "@/lib/data";
@@ -370,6 +371,27 @@ function CTASection() {
           >
             Talk to sales
           </Button>
+        </div>
+
+        {/* Interactive Team Capsule Pill */}
+        <div className="mt-9 flex justify-center relative z-10">
+          <Link
+            href="/gateway"
+            className="group inline-flex flex-wrap items-center justify-center gap-2.5 px-5 py-2.5 rounded-full border border-[#e8a657]/60 bg-[#14171f] hover:bg-[#1c212c] hover:border-[#e8a657] transition-all duration-200 shadow-[0_0_30px_-8px_rgba(232,166,87,0.45)] hover:shadow-[0_0_35px_-5px_rgba(232,166,87,0.65)] hover:-translate-y-0.5"
+          >
+            <span className="w-5 h-5 rounded-full flex items-center justify-center bg-[#e8a657] text-black font-extrabold text-[11px] shrink-0 shadow-sm">
+              ⇄
+            </span>
+            <span className="text-[#f4c489] font-semibold text-[13.5px]">
+              Building with a team?
+            </span>
+            <span className="text-[#e2e8f0] text-[13.5px]">
+              Manage spend &amp; pooled keys with Gateway
+            </span>
+            <span className="text-[#f4c489] font-bold text-[15px] group-hover:translate-x-1 transition-transform duration-200 shrink-0">
+              &rarr;
+            </span>
+          </Link>
         </div>
 
         {/* Ambient glow */}
