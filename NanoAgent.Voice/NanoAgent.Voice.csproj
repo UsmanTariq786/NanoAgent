@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>nanoagent-voice</AssemblyName>
+    <RootNamespace>NanoAgent.Voice</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- The voice runtime is intentionally NOT AOT: it hosts the native Whisper
+         library and PortAudio, and is published separately next to the AOT host. -->
+    <PublishAot>false</PublishAot>
+    <IsAotCompatible>false</IsAotCompatible>
+    <IsPackable>false</IsPackable>
+    <Description>Local Whisper-powered voice dictation runtime (the "voice kit") used by NanoAgent.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Whisper.net" Version="1.9.1" />
+    <PackageReference Include="Whisper.net.Runtime" Version="1.9.1" />
+    <!-- Cross-platform microphone capture. PortAudioSharp2 binds PortAudio and
+         bundles the native library (WASAPI on Windows, CoreAudio on macOS and
+         ALSA/PulseAudio on Linux), so a single capture path works on every
+         supported operating system. -->
+    <PackageReference Include="PortAudioSharp2" Version="1.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="NanoAgent.Tests" />
+  </ItemGroup>
+
+</Project>
