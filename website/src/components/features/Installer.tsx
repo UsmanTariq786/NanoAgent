@@ -198,6 +198,21 @@ export default function Installer() {
             )}
           </div>
         ))}
+
+        <div className="mt-3 pt-3 border-t border-[var(--color-border)] text-center">
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("open-updates-modal"));
+              }
+            }}
+            className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-dim)] hover:text-[var(--color-acc-1)] transition-colors cursor-pointer"
+          >
+            <span>🎙️ Want Voice Mode &amp; upcoming IDE releases?</span>
+            <span className="text-[var(--color-acc-1)] underline underline-offset-2">Get early updates →</span>
+          </button>
+        </div>
       </div>
     </div>
   );

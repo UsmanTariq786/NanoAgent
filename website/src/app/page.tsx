@@ -247,13 +247,13 @@ export default function HomePage() {
               </p>
             </div>
             <div className="mt-3 flex items-center justify-between gap-2">
-              <a
-                href={siteConfig.signupUrl}
+              <Link
+                href="/docs#install"
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--color-acc-1)] text-black hover:bg-white transition-colors"
               >
                 Code for Free →
-              </a>
+              </Link>
               <div
                 className={`h-[2.5px] w-12 rounded-full transition-all duration-300 ${
                   selectedProduct === "agent" ? "bg-[var(--color-acc-1)] opacity-100" : "bg-transparent opacity-0"
@@ -365,12 +365,12 @@ export default function HomePage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 shrink-0">
-                  <a
-                    href={siteConfig.signupUrl}
+                  <Link
+                    href="/docs#install"
                     className="inline-flex items-center justify-center gap-2 font-semibold text-[13.5px] px-5 py-2.5 rounded-full text-[#06121a] bg-[var(--color-acc-2)] hover:bg-[#93a0ff] transition-all shadow-[0_4px_20px_-5px_rgba(110,231,255,0.5)]"
                   >
                     Code for Free →
-                  </a>
+                  </Link>
                   <Link
                     href="/agent"
                     className="inline-flex items-center justify-center gap-2 font-semibold text-[13.5px] px-4 py-2.5 rounded-full border border-[var(--color-border-2)] bg-[rgba(255,255,255,0.03)] text-[var(--color-text)] hover:bg-[rgba(255,255,255,0.08)] transition-all"
@@ -381,7 +381,7 @@ export default function HomePage() {
               </div>
 
               {/* Install Row */}
-              <div>
+              <div id="install-commands" className="scroll-mt-24">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                   <div className="flex gap-1.5 overflow-x-auto scrollbar-hide py-0.5">
                     {(["curl", "npm", "pw", "pnpm"] as const).map((tab) => (
@@ -468,6 +468,25 @@ export default function HomePage() {
                       loading="lazy"
                     />
                   </div>
+                </div>
+
+                {/* Voice Mode & Upcoming Features Banner */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 px-3.5 rounded-xl border border-[rgba(110,231,255,0.15)] bg-[rgba(110,231,255,0.03)] text-xs">
+                  <div className="flex items-center gap-2 text-[var(--color-text-mut)]">
+                    <span className="text-base">🎙️</span>
+                    <span>Building <strong>Voice Mode</strong> &amp; major IDE engine releases.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        window.dispatchEvent(new CustomEvent("open-updates-modal"));
+                      }
+                    }}
+                    className="font-semibold text-[var(--color-acc-1)] hover:underline inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+                  >
+                    Get Early Updates →
+                  </button>
                 </div>
               </div>
             </div>
