@@ -76,7 +76,7 @@ export default function AgentPage() {
 
         <div className="flex flex-wrap items-center justify-center gap-3 mt-7 mb-8">
           <a
-            href={siteConfig.signupUrl}
+            href="/docs#install"
             className="inline-flex items-center justify-center gap-2 font-semibold text-[14.5px] px-6 py-3 rounded-full text-[#06121a] bg-[var(--color-acc-2)] hover:bg-[#93a0ff] hover:-translate-y-0.5 transition-all duration-200 shadow-[0_6px_25px_-8px_rgba(110,231,255,0.6)]"
           >
             Code for Free →
@@ -91,7 +91,9 @@ export default function AgentPage() {
           </a>
         </div>
 
-        <Installer />
+        <div id="install" className="scroll-mt-24">
+          <Installer />
+        </div>
 
         {/* Visual */}
         <div className="relative max-w-[920px] mx-auto mt-14" ref={visualRef}>
