@@ -124,7 +124,7 @@ export default function FeaturesPage() {
         <section className="pt-24 pb-0">
           <CTA
             primaryLabel="Get NanoAgent"
-            primaryHref="/#get"
+            primaryHref="/docs#install"
             secondaryLabel="Read the docs"
             secondaryHref="/docs"
           />

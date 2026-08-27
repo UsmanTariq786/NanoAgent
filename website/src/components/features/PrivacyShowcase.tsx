@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import Container from "@/components/ui/Container";
 
 interface PrivacyPoint {
@@ -23,8 +24,8 @@ const points: PrivacyPoint[] = [
         <path d="M8 10V7.5A4 4 0 0 1 12 3.5a4 4 0 0 1 4 4V10" />
       </svg>
     ),
-    title: "Total Privacy",
-    description: "Operates entirely within your local environment or secure VPC.",
+    title: "Local execution",
+    description: "Run the agent and repository indexing in your local environment or secure VPC according to your deployment configuration.",
   },
   {
     icon: (
@@ -40,8 +41,8 @@ const points: PrivacyPoint[] = [
         <path d="M19.5 15h3" />
       </svg>
     ),
-    title: "Zero Latency",
-    description: "Local models mean instant responses and no rate limits.",
+    title: "Local indexing",
+    description: "Keep vector embeddings and codebase context under your control instead of requiring a third-party repository workspace.",
   },
   {
     icon: (
@@ -51,8 +52,8 @@ const points: PrivacyPoint[] = [
         <path d="M5.5 11.5v6c0 1.7 2.9 3 6.5 3s6.5-1.3 6.5-3v-6" />
       </svg>
     ),
-    title: "Local Indexing",
-    description: "Vector embeddings are stored locally, avoiding third-party data collection.",
+    title: "Provider flexibility",
+    description: "Use hosted, API-key, gateway, or local models without changing the core developer workflow.",
   },
 ];
 
@@ -65,12 +66,11 @@ export default function PrivacyShowcase() {
           <div>
             <h2 className="text-[clamp(32px,4vw,48px)] leading-[1.08] tracking-[-0.03em] font-extrabold m-0">
               <span className="block">Your code.</span>
-              <span className="block">Your machine.</span>
-              <span className="block text-gradient-nano">Zero compromise.</span>
+              <span className="block">Your environment.</span>
+              <span className="block text-gradient-nano">Your choice of model.</span>
             </h2>
             <p className="mt-4 text-[16.5px] text-[var(--color-text-mut)] max-w-[520px] mb-8">
-              In a world of cloud-hosted AI, NanoAgent takes a different path. Your
-              proprietary source code never leaves your workstation unless you push it.
+              NanoAgent takes a local-first approach to repository understanding and developer control. Keep indexing and supported operations close to your codebase while choosing the model provider that fits your technical and policy requirements.
             </p>
 
             <ul className="list-none m-0 p-0 flex flex-col gap-5">
@@ -93,6 +93,13 @@ export default function PrivacyShowcase() {
                 </li>
               ))}
             </ul>
+
+            <div className="mt-7 pl-4 border-l-2 border-[#f4c489] bg-[rgba(232,166,87,0.07)] rounded-r-xl px-4 py-3">
+              <p className="m-0 text-[14px] text-[#d9d2c4] leading-relaxed">
+                Need centralized model routing, spend attribution, policy controls, and audit-ready usage records?{" "}
+                <Link href="/gateway" className="text-[#f4c489] font-bold hover:underline">Explore NanoAgent Gateway for teams →</Link>
+              </p>
+            </div>
           </div>
 
           {/* Orbit visual */}

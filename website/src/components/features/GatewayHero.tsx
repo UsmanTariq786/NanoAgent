@@ -23,25 +23,28 @@ export default function GatewayHero() {
         {/* ── Copy ── */}
         <div className="flex flex-col gap-[18px]">
           <span className="inline-block text-[13px] font-bold tracking-[0.08em] uppercase text-[var(--color-acc-1)]">
-            Enterprise Gateway
+            AI control plane for engineering teams
           </span>
           <h1 className="text-[clamp(36px,4.8vw,54px)] leading-[1.12] tracking-[-0.02em] font-extrabold m-0">
-            One gateway for security, finance, and platform teams{" "}
-            <span className="block mt-[0.08em] bg-gradient-to-r from-[#2fd4ff] via-[#5c9cff] to-[#6c54ff] bg-clip-text text-transparent">
-              to see and control AI spend.
+            One gateway for every model
+            <span className="block mt-[0.08em] bg-gradient-to-r from-[#f4c489] via-[#e8a657] to-[#f4c489] bg-clip-text text-transparent">
+              and every team.
             </span>
           </h1>
           <p className="m-0 max-w-[520px] text-[16.5px] leading-relaxed text-[var(--color-text-mut)]">
-            NanoAgent Gateway is the control plane for AI-powered development. Built to scale from your first pilot to your entire engineering org. One endpoint in front of every model (Claude, OpenAI, Google, and more) gives your teams the visibility and operational control they need.
+            NanoAgent Gateway gives developers one compatible endpoint while security, finance, and platform teams gain visibility, control, and a practical path from first pilot to organization-wide adoption.
           </p>
           <div className="flex gap-[14px] flex-wrap items-center mt-2">
-            <Button variant="primary" size="lg" href="mailto:abdullah@alfain.tech?subject=NanoAgent%20Gateway%20-%20Enterprise%20enquiry">
-              Talk to sales
+            <Button variant="primary" size="lg" className="!bg-[#e8a657] !text-black hover:!bg-[#f4c489] border-none" href={siteConfig.signupUrl}>
+              Start free &rarr;
             </Button>
-            <Button variant="ghost" size="lg" href={siteConfig.signupUrl}>
-              Start for Free &rarr;
+            <Button variant="ghost" size="lg" href="#connectivity">
+              See the architecture
             </Button>
           </div>
+          <p className="m-0 text-[13px] text-[var(--color-text-dim)]">
+            Free workspace &nbsp;&middot;&nbsp; OpenAI-compatible &nbsp;&middot;&nbsp; Hosted or self-managed options
+          </p>
         </div>
 
         {/* ── Diagram ── */}
@@ -109,7 +112,7 @@ export default function GatewayHero() {
                   </div>
                 </div>
               ))}
-              <p className="text-[9.5px] text-[var(--color-text-dim)] font-mono text-center mt-0.5">+ Groq · Ollama · more</p>
+              <p className="text-[9.5px] text-[var(--color-text-dim)] font-mono text-center mt-0.5">+ Groq &middot; Ollama &middot; more</p>
             </div>
           </div>
 
@@ -117,7 +120,7 @@ export default function GatewayHero() {
           <div className="mt-5 pt-3.5 border-t border-[rgba(255,255,255,0.05)] flex items-center justify-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-[#28c864] animate-pulse shrink-0" />
             <span className="text-[10px] font-mono text-[var(--color-text-dim)] text-center">
-              OpenAI-compatible · Zero client rewrites · Switch providers instantly
+              Swap a base URL, not your applications. Route across hosted, compatible, and self-hosted models.
             </span>
           </div>
         </div>

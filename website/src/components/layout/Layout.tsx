@@ -6,6 +6,7 @@ import Nav from "./Nav";
 import Footer from "./Footer";
 import BgEffects from "@/components/ui/BgEffects";
 import UpdatesModal from "@/components/features/UpdatesModal";
+import ContactModal from "@/components/features/ContactModal";
 import { useExitIntent } from "@/lib/useExitIntent";
 
 interface LayoutProps {
@@ -15,6 +16,8 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [isDocsTimedOpen, setIsDocsTimedOpen] = useState(false);
+  const [isContactOpen, setIsContactOpen] = useState(false);
+  const [contactTopic, setContactTopic] = useState("Gateway Enterprise");
   const pathname = usePathname();
   const docsTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -60,6 +63,20 @@ export default function Layout({ children }: LayoutProps) {
     return () => window.removeEventListener("open-updates-modal", handleManualOpen);
   }, []);
 
+  // Listen for contact modal triggers
+  useEffect(() => {
+    const handleContactOpen = (e: Event) => {
+      const customEvent = e as CustomEvent<{ topic?: string }>;
+      if (customEvent.detail?.topic) {
+        setContactTopic(customEvent.detail.topic);
+      }
+      setIsContactOpen(true);
+    };
+
+    window.addEventListener("open-contact-modal", handleContactOpen);
+    return () => window.removeEventListener("open-contact-modal", handleContactOpen);
+  }, []);
+
   const handleClose = () => {
     setIsManualOpen(false);
     setIsDocsTimedOpen(false);
@@ -79,6 +96,13 @@ export default function Layout({ children }: LayoutProps) {
       <UpdatesModal
         isOpen={isModalVisible}
         onClose={handleClose}
+      />
+
+      {/* Global Sales Contact Modal */}
+      <ContactModal
+        isOpen={isContactOpen}
+        onClose={() => setIsContactOpen(false)}
+        initialTopic={contactTopic}
       />
     </>
   );

@@ -78,16 +78,6 @@ export default function Nav() {
           }`}
           aria-label="Primary"
         >
-          <Link
-            href="/"
-            className={`text-[14px] font-medium transition-colors duration-150 ${
-              pathname === "/" ? "text-[var(--color-text)] font-semibold" : "text-[var(--color-text-mut)] hover:text-[var(--color-text)]"
-            }`}
-            onClick={closeMenu}
-          >
-            Home
-          </Link>
-
           {/* Desktop Product Dropdown */}
           <div
             ref={productRef}
@@ -212,6 +202,27 @@ export default function Nav() {
                       </div>
                     </Link>
                   </div>
+
+                  {/* Dropdown Footer: Contact Sales */}
+                  <div className="col-span-1 md:col-span-2 pt-2.5 mt-1 border-t border-[rgba(255,255,255,0.06)] flex items-center justify-between text-xs text-[var(--color-text-mut)] px-1">
+                    <span>Need enterprise governance or volume pricing?</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        closeMenu();
+                        if (typeof window !== "undefined") {
+                          window.dispatchEvent(
+                            new CustomEvent("open-contact-modal", {
+                              detail: { topic: "Gateway Enterprise" },
+                            })
+                          );
+                        }
+                      }}
+                      className="text-[#f4c489] hover:underline font-semibold cursor-pointer bg-transparent border-0 p-0 inline-flex items-center gap-1"
+                    >
+                      Contact Sales →
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -277,6 +288,41 @@ export default function Nav() {
           >
             Pricing
           </Link>
+
+          <button
+            type="button"
+            className="hidden md:inline-block text-[14px] font-medium transition-colors duration-150 text-[var(--color-text-mut)] hover:text-[var(--color-text)] cursor-pointer bg-transparent border-0 p-0 font-sans"
+            onClick={() => {
+              closeMenu();
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(
+                  new CustomEvent("open-contact-modal", {
+                    detail: { topic: "General Inquiry" },
+                  })
+                );
+              }
+            }}
+          >
+            Contact
+          </button>
+
+          {/* Mobile contact link */}
+          <button
+            type="button"
+            className="md:hidden text-left text-[14px] font-medium transition-colors duration-150 text-[var(--color-text-mut)] hover:text-[var(--color-text)] py-1 cursor-pointer bg-transparent border-0 p-0"
+            onClick={() => {
+              closeMenu();
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(
+                  new CustomEvent("open-contact-modal", {
+                    detail: { topic: "General Inquiry" },
+                  })
+                );
+              }
+            }}
+          >
+            ✉️ Contact Sales &amp; Team
+          </button>
 
           {/* Mobile auth buttons */}
           <button

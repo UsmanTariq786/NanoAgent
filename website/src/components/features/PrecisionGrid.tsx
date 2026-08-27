@@ -74,13 +74,13 @@ const cards: PrecisionCard[] = [
 
 export default function PrecisionGrid() {
   return (
-    <section className="section container" id="precision">
+    <section className="pt-24 pb-0 border-t border-[var(--color-border)]" id="precision">
       <Container>
         <header className="text-center mb-[46px] max-w-[680px] mx-auto">
           <h2 className="text-[clamp(26px,3.4vw,38px)] leading-[1.12] tracking-[-0.02em] font-extrabold mt-0 mx-0 mb-3">
             Precision engineered for complex codebases.
           </h2>
-          <p className="text-[16.5px] text-[var(--color-text-mut)] mt-0 mx-auto max-w-[640px]">
+          <p className="text-[16.5px] text-[var(--color-text-mut)] mt-0 mx-auto max-w-[640px] mb-0">
             NanoAgent isn&apos;t a chatbot. It&apos;s a structured workflow engine that operates
             autonomously but transparently.
           </p>
