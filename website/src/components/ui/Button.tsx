@@ -33,13 +33,14 @@ export default function Button({
       : "text-[var(--color-text)] bg-[rgba(255,255,255,0.04)] border-[var(--color-border-2)] hover:bg-[rgba(255,255,255,0.08)] hover:-translate-y-0.5";
 
   if (href) {
-    const isExternal = href.startsWith("http");
+    const isExternal = href.startsWith("http") || href.startsWith("mailto:");
     if (isExternal) {
+      const isHttp = href.startsWith("http");
       return (
         <a
           href={href}
-          target="_blank"
-          rel="noopener noreferrer"
+          target={isHttp ? "_blank" : undefined}
+          rel={isHttp ? "noopener noreferrer" : undefined}
           className={`${base} ${sizeClasses} ${variantClasses} ${className}`}
         >
           {children}

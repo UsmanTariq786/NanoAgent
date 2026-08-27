@@ -34,45 +34,38 @@ export interface FeatureItem {
 export const whyFeatures: FeatureItem[] = [
   {
     icon: "🧩",
-    title: "LSP-enabled",
-    description:
-      "Language Server Protocol integration gives the agent real symbols, types, and diagnostics — not guesses about your code.",
-  },
-  {
-    icon: "🧠",
-    title: "Repo memory",
-    description:
-      "Team knowledge lives in version-controlled .nanoagent/memory files you can read, review, and edit — not hidden agent notes.",
-  },
-  {
-    icon: "⚙️",
-    title: "Headless mode",
-    description:
-      "Non-interactive single-query mode for CI/CD pipelines, scripts, and automation. Supports piped stdin.",
-  },
-  {
-    icon: "⌨️",
-    title: "! and !! shell",
-    description:
-      "Run shell commands inline with ! and rerun the last one with !! — no need to switch terminals.",
-  },
-  {
-    icon: "🛡️",
-    title: "Sandboxed execution",
-    description:
-      "Tools and commands run inside a sandbox with permission gates for file edits, network access, and elevated operations.",
+    title: "Local repository context",
+    description: "Build semantic, language-aware context from your codebase locally so the agent can reason across real projects.",
   },
   {
     icon: "🗺️",
-    title: "Planning mode",
-    description:
-      "A read-only planning profile drafts a reviewable plan before a single file is touched.",
+    title: "Reviewable planning",
+    description: "Use a read-only planning workflow to inspect the intended approach before a file is changed.",
   },
   {
-    icon: "📦",
-    title: "SDK to embed in your app",
-    description:
-      "Drop NanoAgent into your own .NET application with the SDK on NuGet and drive it programmatically.",
+    icon: "🛡️",
+    title: "Permission-gated actions",
+    description: "Approve file edits, commands, network access, and elevated operations before they happen.",
+  },
+  {
+    icon: "🧠",
+    title: "Repository memory in Git",
+    description: "Keep team knowledge in version-controlled memory files you can inspect, review, and evolve together.",
+  },
+  {
+    icon: "⌨️",
+    title: "Fits your workflow",
+    description: "Work from the terminal, desktop, VS Code, Visual Studio, and supported CI/CD workflows.",
+  },
+  {
+    icon: "↗️",
+    title: "Provider flexibility",
+    description: "Choose hosted, API-key, OpenAI-compatible, or local model providers without changing how you work.",
+  },
+  {
+    icon: "⚙️",
+    title: "Headless & CI mode",
+    description: "Non-interactive single-query mode for CI/CD pipelines, scripts, and automation. Supports piped stdin.",
   },
 ];
 
@@ -82,28 +75,31 @@ export const comparisonHeaders = [
   "Codex",
   "Claude Code",
   "OpenCode",
-  "Nanoai Code",
   "GitHub Copilot",
   "Aider",
 ] as const;
 
 export const comparisonRows: { feature: string; values: string[] }[] = [
-  { feature: "Local-first", values: ["✓", "◐", "◐", "✓", "◐", "–", "✓"] },
-  { feature: "Repo memory", values: ["✓", "◐", "✓", "◐", "◐", "◐", "–"] },
-  { feature: "VS Code extension", values: ["✓", "✓", "✓", "✓", "✓", "✓", "–"] },
-  { feature: "Visual Studio", values: ["✓", "–", "–", "–", "–", "✓", "–"] },
-  { feature: "JetBrains plugin", values: ["✓ (ACP)", "–", "✓", "✓", "✓", "✓", "–"] },
-  { feature: "CI code reviews", values: ["✓", "✓", "✓", "–", "✓", "✓", "–"] },
-  { feature: "15+ AI providers", values: ["✓", "–", "–", "✓", "✓", "–", "✓"] },
-  { feature: "ACP protocol", values: ["✓", "–", "–", "✓", "✓", "–", "–"] },
-  { feature: "Sandboxed execution", values: ["✓", "✓", "✓", "–", "–", "–", "–"] },
-  { feature: "Open source", values: ["✓", "✓", "–", "✓", "✓", "–", "✓"] },
-  { feature: "LSP", values: ["✓", "–", "–", "✓", "–", "✓", "–"] },
-  { feature: "Direct shell & bg terminals", values: ["✓", "◐", "✓", "◐", "✓", "◐", "◐"] },
-  { feature: "Subagents & orchestration", values: ["✓", "✓", "✓", "✓", "✓", "◐", "–"] },
-  { feature: "Local codebase indexing", values: ["✓", "–", "–", "–", "✓", "◐", "◐"] },
-  { feature: "Memory, audit & hooks", values: ["✓", "–", "✓", "–", "–", "–", "–"] },
-  { feature: "SDK to embed in your app", values: ["✓", "–", "✓", "–", "–", "–", "–"] },
+  // Core execution
+  { feature: "Local-first execution", values: ["✓", "◐", "◐", "✓", "–", "✓"] },
+  { feature: "Local codebase indexing", values: ["✓", "◐", "◐", "◐", "◐", "◐"] },
+  { feature: "Sandboxed execution", values: ["✓", "◐", "◐", "–", "–", "–"] },
+  { feature: "Direct shell & bg terminals", values: ["✓", "◐", "✓", "◐", "◐", "◐"] },
+  // Engineering workflow
+  { feature: "Repo memory under version control", values: ["✓", "◐", "◐", "◐", "◐", "–"] },
+  { feature: "LSP-aware coding workflow", values: ["✓", "◐", "◐", "◐", "◐", "◐"] },
+  { feature: "Reviewable planning mode", values: ["✓", "◐", "◐", "◐", "◐", "◐"] },
+  { feature: "Automated validation workflow", values: ["✓", "✓", "✓", "◐", "◐", "◐"] },
+  { feature: "Subagents & orchestration", values: ["✓", "◐", "◐", "◐", "◐", "–"] },
+  // Integrations
+  { feature: "VS Code workflow", values: ["✓", "✓", "✓", "✓", "✓", "◐"] },
+  { feature: "Visual Studio workflow", values: ["✓", "–", "–", "–", "◐", "–"] },
+  { feature: "CI/CD and headless workflows", values: ["✓", "◐", "◐", "◐", "◐", "◐"] },
+  { feature: "SDK for embedding in applications", values: ["✓", "–", "–", "◐", "–", "–"] },
+  // Model choice
+  { feature: "Multiple model providers (15+)", values: ["✓", "◐", "◐", "✓", "◐", "✓"] },
+  { feature: "OpenAI-compatible endpoints", values: ["✓", "–", "–", "✓", "–", "✓"] },
+  { feature: "Open source (Apache-2.0)", values: ["✓", "◐", "–", "✓", "–", "✓"] },
 ];
 
 export const providers = [
@@ -632,18 +628,18 @@ export interface GatewayAudience {
 export const gatewayAudiences: GatewayAudience[] = [
   {
     label: "Security",
-    title: "See AI traffic clearly across your organization",
-    description: "Track how teams use models, watch for anomalies, and keep operations visible as adoption grows.",
+    title: "See AI traffic clearly.",
+    description: "Track how teams use models, detect unusual activity, control credentials, and keep operations visible as adoption grows.",
   },
   {
     label: "Finance",
-    title: "Turn AI spend into something you can actually measure",
-    description: "Attribute usage by team, app, project, and user so budgets, quotas, and cost reviews stop being guesswork.",
+    title: "Make spend measurable.",
+    description: "Attribute usage by team, application, project, and user so budgets, quotas, and cost reviews stop being guesswork.",
   },
   {
     label: "Platform",
-    title: "Give developers one stable interface as your stack evolves",
-    description: "Keep clients pointed at one endpoint while your team manages changes behind the scenes.",
+    title: "Keep the interface stable.",
+    description: "Give developers one endpoint while your platform team manages providers, fallback models, keys, and policy changes behind it.",
   },
 ];
 
@@ -679,19 +675,19 @@ export interface GatewayFeature {
 
 export const gatewayFeatures: GatewayFeature[] = [
   {
-    icon: "🔌",
+    icon: "01",
     title: "Zero migration",
-    description: "Keep your existing OpenAI-compatible SDKs and prompts. Swap one base URL and you're routed through the Gateway.",
+    description: "Keep OpenAI-compatible SDKs and prompts. Change the base URL and route traffic through Gateway.",
   },
   {
-    icon: "🛡️",
+    icon: "02",
     title: "Operations built in",
-    description: "Visibility features wrap every call without forcing teams to rebuild their tooling.",
+    description: "Apply visibility, access, routing, and usage controls around the clients your teams already use.",
   },
   {
-    icon: "💰",
-    title: "Cost in your control",
-    description: "Attribute spend per team and monitor usage trends so AI costs stay understandable as demand grows.",
+    icon: "03",
+    title: "Costs you can explain",
+    description: "Attribute usage and monitor trends so AI costs remain understandable as demand and model choice expand.",
   },
 ];
 
@@ -760,7 +756,7 @@ export const gatewayPricingPlans: GatewayPricingPlan[] = [
     name: "Free",
     monthlyPrice: "$0",
     annualPrice: "$0",
-    description: "Start evaluating the Gateway with basic visibility.",
+    description: "Start evaluating Gateway with basic visibility.",
     features: [
       { name: "Single workspace", included: true },
       { name: "Up to 10,000 requests/mo", included: true },
@@ -809,7 +805,7 @@ export const gatewayPricingPlans: GatewayPricingPlan[] = [
       { name: "Custom rate limits", included: true },
     ],
     ctaLabel: "Talk to Sales",
-    ctaHref: "mailto:abdullah@alfain.tech?subject=NanoAgent%20Gateway%20-%20Enterprise%20enquiry",
+    ctaHref: "mailto:sales@getnanoai.com?subject=NanoAgent%20Gateway%20-%20Enterprise%20enquiry",
   },
 ];
 

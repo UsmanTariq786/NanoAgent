@@ -412,7 +412,7 @@ export OPENAI_API_KEY="your_gateway_key_here"`}</code>
         <section className="pt-24 pb-0">
           <CTA
             primaryLabel="Get NanoAgent"
-            primaryHref="/#get"
+            primaryHref="#install"
             secondaryLabel="See all features"
             secondaryHref="/features"
           />

@@ -64,22 +64,22 @@ export default function AgentPage() {
       {/* ---- HERO ---- */}
       <section className="text-center max-w-[1000px] mx-auto px-6 pt-16 pb-6 reveal-target">
         <span className="inline-block text-[13px] font-bold tracking-[0.08em] uppercase text-[var(--color-acc-1)] mb-3">
-          NanoAgent · Open Source AI Coding Agent
+          Open-source AI coding agent
         </span>
         <h1 className="text-[clamp(44px,7vw,72px)] leading-[0.98] tracking-[-0.05em] font-extrabold m-0 text-[#f3f6fb] [text-wrap:balance]">
-          Code faster without{" "}
-          <span className="text-gradient-nano">giving up control.</span>
+          Built for real codebases.{" "}
+          <span className="text-gradient-nano">Designed to keep you in control.</span>
         </h1>
         <p className="mt-[22px] mx-auto max-w-[640px] text-[17px] text-[var(--color-text-mut)]">
-          NanoAgent runs on your machine. It understands your repository, plans changes, edits files, runs validation, and reviews diffs. Quietly capable, incredibly precise.
+          NanoAgent works locally across your terminal, editor, and desktop. It understands repository context, proposes a plan, asks before meaningful actions, and lets you review every diff.
         </p>
 
-        <div className="flex flex-wrap items-center justify-center gap-3 mt-7 mb-8">
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-7 mb-4">
           <a
             href="/docs#install"
             className="inline-flex items-center justify-center gap-2 font-semibold text-[14.5px] px-6 py-3 rounded-full text-[#06121a] bg-[var(--color-acc-2)] hover:bg-[#93a0ff] hover:-translate-y-0.5 transition-all duration-200 shadow-[0_6px_25px_-8px_rgba(110,231,255,0.6)]"
           >
-            Code for Free →
+            Install NanoAgent free →
           </a>
           <a
             href={siteConfig.github}
@@ -90,6 +90,10 @@ export default function AgentPage() {
             View on GitHub
           </a>
         </div>
+        
+        <p className="text-[13px] text-[var(--color-text-dim)] font-medium tracking-wide mb-8">
+          Apache-2.0 open source · Local-first workflow · Terminal, editor, desktop, and CI/CD
+        </p>
 
         <div id="install" className="scroll-mt-24">
           <Installer />
@@ -204,8 +208,8 @@ export default function AgentPage() {
         <Container>
           <SectionHeader
             eyebrow="Why NanoAgent"
-            title="Power-user features, nothing hidden"
-            description="Built for practical engineering work: real symbols, version-controlled memory, scriptable runs, and a sandbox for anything sensitive."
+            title="Power-user engineering features. Nothing hidden."
+            description="Structured context, reviewable planning, safe execution, and model flexibility. Built for practical software work rather than one-off code generation."
           />
           <FeatureList items={whyFeatures} />
           <div className="flex justify-center mt-7">
@@ -222,13 +226,37 @@ export default function AgentPage() {
       {/* ---- PRECISION GRID ---- */}
       <PrecisionGrid />
 
+      {/* ---- HOW IT WORKS ---- */}
+      <section className="pt-24 pb-0 reveal-target" id="how-it-works">
+        <Container>
+          <SectionHeader
+            eyebrow="How it works"
+            title="An autonomous workflow you can inspect."
+            description="Move quickly without losing the ability to see, guide, and approve what your coding agent does."
+          />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[
+              { num: "01", title: "Understand the repository", desc: "NanoAgent gathers relevant codebase context, symbols, diagnostics, and existing project knowledge before it acts." },
+              { num: "02", title: "Propose a reviewable plan", desc: "See what it intends to change and which checks it plans to run, then approve or redirect the work." },
+              { num: "03", title: "Edit, validate, and review", desc: "NanoAgent applies the approved work, runs validation, and leaves you with targeted diffs to inspect." },
+            ].map((step) => (
+              <div key={step.num} className="p-6 rounded-2xl border border-[var(--color-border)] bg-[rgba(9,14,21,0.62)] reveal-target">
+                <span className="text-[var(--color-acc-1)] font-mono font-bold text-[13px] tracking-[0.08em]">{step.num}</span>
+                <h3 className="mt-4 mb-2 text-[19px] font-semibold tracking-[-0.025em]">{step.title}</h3>
+                <p className="m-0 text-[14px] text-[var(--color-text-mut)] leading-relaxed">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </Container>
+      </section>
+
       {/* ---- COMPARISON ---- */}
       <section className="pt-24 pb-0 reveal-target" id="compare">
         <Container>
           <SectionHeader
-            eyebrow="Comparison"
-            title="How NanoAgent compares"
-            description="See what makes NanoAgent different from other AI coding tools."
+            eyebrow="For technical evaluators"
+            title="See what makes NanoAgent different."
+            description="Compare the execution model, engineering workflow, integrations, and model flexibility that matter when AI becomes part of real software development."
           />
           <ComparisonTable />
         </Container>
@@ -239,8 +267,8 @@ export default function AgentPage() {
         <Container>
           <SectionHeader
             eyebrow="Provider choice"
-            title="Use the model that fits your budget &amp; policy"
-            description="From subscription sign-in to API-key providers to fully local models — NanoAgent adapts to what you already pay for."
+            title="Use the model that fits your budget, workflow, and policy."
+            description="NanoAgent is your coding workflow layer. Keep the flexibility to use the model source you already pay for — whether that is a subscription, API provider, OpenAI-compatible endpoint, or local model."
           />
           <ProvidersList />
         </Container>
@@ -261,12 +289,12 @@ export default function AgentPage() {
                 <path d="M280.5 426.5C214.5 418.5 168 371 168 309.5C168 284.5 177 257.5 192 239.5C185.5 223 186.5 188 194 173.5C214 171 241 181.5 257 196C276 190 296 187 320.5 187C345 187 365 190 383 195.5C398.5 181.5 426 171 446 173.5C453 187 454 222 447.5 239C463.5 258 472 283.5 472 309.5C472 371 425.5 417.5 358.5 426C375.5 437 387 461 387 488.5L387 540.5C387 555.5 399.5 564 414.5 558C505 523.5 576 433 576 321C576 179.5 461 64 319.5 64C178 64 64 179.5 64 321C64 432 134.5 524 229.5 558.5C243 563.5 256 554.5 256 541L256 501C249 504 240 506 232 506C199 506 179.5 488 165.5 454.5C160 441 154 433 142.5 431.5C136.5 431 134.5 428.5 134.5 425.5C134.5 419.5 144.5 415 154.5 415C169 415 181.5 424 194.5 442.5C204.5 457 215 463.5 227.5 463.5C240 463.5 248 459 259.5 447.5C268 439 274.5 431.5 280.5 426.5z" />
               </svg>
             }
-            title="Proudly Open Source."
-            description="Released under the permissive Apache-2.0 License. Contribute, fork, and build upon NanoAgent without restrictions."
-            primaryLabel="View on GitHub"
-            primaryHref={siteConfig.github}
-            secondaryLabel="Apache-2.0 License"
-            secondaryHref={`${siteConfig.github}/blob/master/LICENSE.txt`}
+            title="Use an AI coding agent you can actually inspect."
+            description="Install NanoAgent free and bring AI into your codebase without giving up visibility, control, or provider choice."
+            primaryLabel="Install NanoAgent free"
+            primaryHref="/docs#install"
+            secondaryLabel="View on GitHub"
+            secondaryHref={siteConfig.github}
             whitePrimary
           />
         </Container>

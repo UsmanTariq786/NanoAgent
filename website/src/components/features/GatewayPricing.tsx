@@ -20,21 +20,24 @@ function PricingCheck({ included }: { included: boolean }) {
 
 export default function GatewayPricing() {
   return (
-    <section className="section featcat pt-20 pb-0" id="pricing">
+    <section className="section featcat pt-20 pb-0 scroll-mt-20" id="pricing">
       <Container>
         {/* Header with explicit Gateway identity */}
         <div className="text-center max-w-[760px] mx-auto mb-10">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-[rgba(232,166,87,0.3)] bg-[rgba(232,166,87,0.1)] text-[#f4c489] text-[12px] font-mono font-semibold uppercase tracking-wider mb-3.5">
-            ⇄ Gateway · Enterprise AI Control Plane
+            Transparent pricing
           </div>
           <h2 className="text-[clamp(28px,4.2vw,44px)] font-bold tracking-tight text-[#f3f6fb] m-0 mb-3.5">
-            Transparent Pricing for Engineering Teams
+            Start free. Pay when control becomes valuable.
           </h2>
           <p className="text-[16px] text-[var(--color-text-mut)] leading-relaxed m-0">
-            Start evaluating with a free workspace. Scale into cross-team spend attribution, model routing policies, and audit logs as your AI adoption grows.
+            Use the free workspace to evaluate Gateway, then upgrade when your team needs broader visibility, collaboration, and limits.
           </p>
         </div>
 
+        <p className="text-center text-[14px] text-[var(--color-text-mut)] max-w-[760px] mx-auto mb-8">
+          Model-provider charges are separate. Gateway pricing covers the control plane, workspace capabilities, usage visibility, and operational controls.
+        </p>
 
         {/* Pricing Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-[20px] max-w-[1060px] mx-auto">
@@ -49,7 +52,7 @@ export default function GatewayPricing() {
             >
               {plan.featured && (
                 <span className="absolute top-[-12px] left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full bg-[#e8a657] text-[#041017] text-[10.5px] font-mono font-extrabold tracking-[0.06em] uppercase whitespace-nowrap shadow-md">
-                  Most Popular · Teams
+                  Most Popular &middot; Teams
                 </span>
               )}
 
@@ -115,21 +118,44 @@ export default function GatewayPricing() {
 
               {/* CTA */}
               <div className="mt-6 pt-4 border-t border-[rgba(255,255,255,0.06)]">
-                <Button
-                  variant={plan.featured ? "primary" : "ghost"}
-                  href={plan.ctaHref}
-                  className={`w-full justify-center ${
-                    plan.featured
-                      ? "!bg-[#e8a657] !text-black hover:!bg-[#f4c489]"
-                      : ""
-                  }`}
-                >
-                  {plan.ctaLabel}
-                </Button>
+                {plan.name === "Enterprise" ? (
+                  <Button
+                    variant="ghost"
+                    type="button"
+                    className="w-full justify-center"
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        window.dispatchEvent(
+                          new CustomEvent("open-contact-modal", {
+                            detail: { topic: "Gateway Enterprise" },
+                          })
+                        );
+                      }
+                    }}
+                  >
+                    {plan.ctaLabel}
+                  </Button>
+                ) : (
+                  <Button
+                    variant={plan.featured ? "primary" : "ghost"}
+                    href={plan.ctaHref}
+                    className={`w-full justify-center ${
+                      plan.featured
+                        ? "!bg-[#e8a657] !text-black hover:!bg-[#f4c489]"
+                        : ""
+                    }`}
+                  >
+                    {plan.ctaLabel}
+                  </Button>
+                )}
               </div>
             </div>
           ))}
         </div>
+        
+        <p className="mt-6 text-center text-[12px] text-[var(--color-text-dim)]">
+          No credit card required for the free workspace.
+        </p>
       </Container>
     </section>
   );

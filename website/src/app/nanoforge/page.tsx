@@ -365,7 +365,16 @@ function CTASection() {
             Build for Free &rarr;
           </Button>
           <Button
-            href="mailto:abdullah@alfain.tech?subject=NanoForge%20%E2%80%94%20Full-Stack%20App%20Builder%20enquiry"
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(
+                  new CustomEvent("open-contact-modal", {
+                    detail: { topic: "NanoForge Full-Stack Builder" },
+                  })
+                );
+              }
+            }}
             variant="ghost"
             size="lg"
           >

@@ -5,17 +5,17 @@ import { supportedProviders } from "./providerIcons";
 
 export default function GatewayConnectivity() {
   return (
-    <section className="py-20 md:py-24 border-t border-[var(--color-border)] relative" id="connectivity">
+    <section className="py-20 md:py-24 border-t border-[var(--color-border)] relative scroll-mt-20" id="connectivity">
       <Container>
         <div className="text-center max-w-[760px] mx-auto mb-14">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-[rgba(232,166,87,0.3)] bg-[rgba(232,166,87,0.1)] text-[#f4c489] text-[12px] font-mono font-semibold uppercase tracking-wider mb-3.5">
-            04 · CONNECTIVITY &amp; ENDPOINTS
+            Capabilities
           </div>
           <h2 className="text-[clamp(28px,4.2vw,44px)] font-bold tracking-tight text-[#f3f6fb] m-0 mb-3.5">
-            Connect to Any Model. Zero Client Rewrites.
+            Protect access, route intelligently, and learn from every call.
           </h2>
           <p className="text-[16px] text-[var(--color-text-mut)] leading-relaxed m-0">
-            Route traffic seamlessly across all frontier LLMs, open-source weights, and self-hosted GPU clusters behind one unified OpenAI-compatible URL.
+            Start with the capabilities you need now. Add deeper control as your AI program matures.
           </p>
         </div>
 
@@ -50,27 +50,27 @@ export default function GatewayConnectivity() {
             <span className="font-mono text-xs font-bold text-[#f4c489] uppercase tracking-wider block mb-1.5">
               01 · Virtual API Keys
             </span>
-            <h4 className="text-sm font-semibold text-white mb-1 m-0">Protect Provider Credentials</h4>
+            <h4 className="text-sm font-semibold text-white mb-1 m-0">Give every client one consistent entry point.</h4>
             <p className="text-xs text-[var(--color-text-mut)] m-0 leading-relaxed">
-              Developers query the Gateway with scoped user tokens. Master API keys never leave your encrypted vault.
+              Virtual API keys let developers use scoped credentials while provider secrets stay behind your control plane.
             </p>
           </div>
           <div>
             <span className="font-mono text-xs font-bold text-[#f4c489] uppercase tracking-wider block mb-1.5">
-              02 · Automated Failovers
+              02 · Reliability
             </span>
-            <h4 className="text-sm font-semibold text-white mb-1 m-0">Zero Downtime Resilience</h4>
+            <h4 className="text-sm font-semibold text-white mb-1 m-0">Keep applications working when providers change.</h4>
             <p className="text-xs text-[var(--color-text-mut)] m-0 leading-relaxed">
-              Configure secondary fallback providers and automatic retries if upstream rate limits or outages occur.
+              Configure fallback providers and retry behavior for upstream rate limits, transient errors, and changing model availability.
             </p>
           </div>
           <div>
             <span className="font-mono text-xs font-bold text-[#f4c489] uppercase tracking-wider block mb-1.5">
-              03 · Live Policy Routing
+              03 · Policy Routing
             </span>
-            <h4 className="text-sm font-semibold text-white mb-1 m-0">Hot-Swap Behind One URL</h4>
+            <h4 className="text-sm font-semibold text-white mb-1 m-0">Change the route without pushing application code.</h4>
             <p className="text-xs text-[var(--color-text-mut)] m-0 leading-relaxed">
-              Redirect traffic to new model releases or cheaper tier endpoints instantly without pushing client application code.
+              Move traffic to a new model release, a cheaper tier, or a private endpoint from the control plane instead of coordinating client updates.
             </p>
           </div>
         </div>
