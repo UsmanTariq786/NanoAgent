@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-const POSTHOG_HOST = "https://us.i.posthog.com";
-const POSTHOG_TOKEN = "phc_zon2mAf4WjnqZCgZszhgbPgieXxngH5iixSiapVGcczQ";
+const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com";
+const POSTHOG_TOKEN = process.env.NEXT_PUBLIC_POSTHOG_KEY || "phc_zon2mAf4WjnqZCgZszhgbPgieXxngH5iixSiapVGcczQ";
+
 
 export async function POST(req: Request) {
   try {
