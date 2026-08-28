@@ -6,6 +6,15 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   outputFileTracingRoot: __dirname,
+  async redirects() {
+    return [
+      {
+        source: "/forge",
+        destination: "/nanoforge",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -4,7 +4,6 @@ import { useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Container from "@/components/ui/Container";
 import Button from "@/components/ui/Button";
-import { siteConfig } from "@/lib/data";
 
 /* ─────────────────────────────────────────────
    Data
@@ -361,9 +360,6 @@ function CTASection() {
           database, with you reviewing every change.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
-          <Button href={siteConfig.signupUrl} size="lg">
-            Build for Free &rarr;
-          </Button>
           <Button
             type="button"
             onClick={() => {
@@ -375,10 +371,9 @@ function CTASection() {
                 );
               }
             }}
-            variant="ghost"
             size="lg"
           >
-            Talk to sales
+            Talk to sales &rarr;
           </Button>
         </div>
 
@@ -419,6 +414,22 @@ function CTASection() {
    PAGE
    ═══════════════════════════════════════════════ */
 export default function NanoForgePage() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (
+      window.location.hash === "#sales" ||
+      window.location.hash === "#contact" ||
+      window.location.search.includes("sales") ||
+      window.location.search.includes("contact")
+    ) {
+      window.dispatchEvent(
+        new CustomEvent("open-contact-modal", {
+          detail: { topic: "NanoForge Full-Stack Builder" },
+        })
+      );
+    }
+  }, []);
+
   return (
     <>
       {/* Section Nav */}
@@ -446,8 +457,20 @@ export default function NanoForgePage() {
             <PromptBox />
 
             <div className="mt-6">
-              <Button href={siteConfig.signupUrl} size="lg">
-                Build for Free &rarr;
+              <Button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(
+                      new CustomEvent("open-contact-modal", {
+                        detail: { topic: "NanoForge Full-Stack Builder" },
+                      })
+                    );
+                  }
+                }}
+                size="lg"
+              >
+                Talk to sales &rarr;
               </Button>
             </div>
           </RevealSection>

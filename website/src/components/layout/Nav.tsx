@@ -12,6 +12,8 @@ export default function Nav() {
   const [productOpen, setProductOpen] = useState(false);
   const productRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const isGateway = pathname === "/gateway" || pathname?.startsWith("/gateway");
+  const isForge = pathname === "/nanoforge" || pathname?.startsWith("/nanoforge");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -58,6 +60,17 @@ export default function Nav() {
   const openRegister = useCallback(() => {
     window.open(siteConfig.signupUrl, "_blank");
   }, []);
+
+  const openForgeSales = useCallback(() => {
+    closeMenu();
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("open-contact-modal", {
+          detail: { topic: "NanoForge Full-Stack Builder" },
+        })
+      );
+    }
+  }, [closeMenu]);
 
   return (
     <header
@@ -324,25 +337,38 @@ export default function Nav() {
             ✉️ Contact Sales &amp; Team
           </button>
 
-          {/* Mobile auth buttons */}
-          <button
-            className="md:hidden inline-flex items-center justify-center font-semibold text-[13.5px] leading-none px-4 py-3 rounded-full border border-[var(--color-border)] text-[var(--color-text-mut)] bg-transparent hover:text-[var(--color-text)] transition-all duration-200 mt-2 w-full cursor-pointer"
-            onClick={() => {
-              closeMenu();
-              openApp();
-            }}
-          >
-            Login
-          </button>
-          <button
-            className="md:hidden inline-flex items-center justify-center font-semibold text-[13.5px] leading-none px-4 py-3 rounded-full border border-transparent text-[#06121a] bg-[var(--color-acc-2)] shadow-[0_4px_15px_-5px_rgba(110,231,255,0.4)] hover:-translate-y-0.5 transition-all duration-200 w-full cursor-pointer"
-            onClick={() => {
-              closeMenu();
-              openRegister();
-            }}
-          >
-            Register
-          </button>
+          {/* Mobile auth / sales buttons */}
+          {isGateway && (
+            <>
+              <button
+                className="md:hidden inline-flex items-center justify-center font-semibold text-[13.5px] leading-none px-4 py-3 rounded-full border border-[var(--color-border)] text-[var(--color-text-mut)] bg-transparent hover:text-[var(--color-text)] transition-all duration-200 mt-2 w-full cursor-pointer"
+                onClick={() => {
+                  closeMenu();
+                  openApp();
+                }}
+              >
+                Login
+              </button>
+              <button
+                className="md:hidden inline-flex items-center justify-center font-semibold text-[13.5px] leading-none px-4 py-3 rounded-full border border-transparent text-[#06121a] bg-[#f4c489] shadow-[0_4px_15px_-5px_rgba(244,196,137,0.4)] hover:-translate-y-0.5 transition-all duration-200 w-full cursor-pointer"
+                onClick={() => {
+                  closeMenu();
+                  openRegister();
+                }}
+              >
+                Register
+              </button>
+            </>
+          )}
+
+          {isForge && (
+            <button
+              className="md:hidden inline-flex items-center justify-center font-semibold text-[13.5px] leading-none px-4 py-3 rounded-full border border-transparent text-[#06121a] bg-[#b07cff] shadow-[0_4px_15px_-5px_rgba(176,124,255,0.4)] hover:-translate-y-0.5 transition-all duration-200 w-full cursor-pointer mt-2"
+              onClick={openForgeSales}
+            >
+              Talk to Sales
+            </button>
+          )}
         </nav>
 
         {/* Actions */}
@@ -360,18 +386,31 @@ export default function Nav() {
             <span className="gh-stars hidden md:inline">Star</span>
           </a>
 
-          <button
-            className="hidden md:inline-flex items-center justify-center font-semibold text-[13.5px] leading-none px-4 py-3 rounded-full border border-[var(--color-border)] text-[var(--color-text-mut)] bg-transparent hover:text-[var(--color-text)] transition-all duration-200 cursor-pointer"
-            onClick={openApp}
-          >
-            Login
-          </button>
-          <button
-            className="hidden md:inline-flex items-center justify-center font-semibold text-[13.5px] leading-none px-4 py-3 rounded-full border border-transparent text-[#06121a] bg-[var(--color-acc-2)] shadow-[0_4px_15px_-5px_rgba(110,231,255,0.4)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
-            onClick={openRegister}
-          >
-            Register
-          </button>
+          {isGateway && (
+            <>
+              <button
+                className="hidden md:inline-flex items-center justify-center font-semibold text-[13.5px] leading-none px-4 py-3 rounded-full border border-[var(--color-border)] text-[var(--color-text-mut)] bg-transparent hover:text-[var(--color-text)] transition-all duration-200 cursor-pointer"
+                onClick={openApp}
+              >
+                Login
+              </button>
+              <button
+                className="hidden md:inline-flex items-center justify-center font-semibold text-[13.5px] leading-none px-4 py-3 rounded-full border border-transparent text-[#06121a] bg-[#f4c489] shadow-[0_4px_15px_-5px_rgba(244,196,137,0.4)] hover:bg-[#ffe0a8] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                onClick={openRegister}
+              >
+                Register
+              </button>
+            </>
+          )}
+
+          {isForge && (
+            <button
+              className="hidden md:inline-flex items-center justify-center font-semibold text-[13.5px] leading-none px-4 py-2.5 rounded-full border border-transparent text-[#06121a] bg-[#b07cff] shadow-[0_4px_15px_-5px_rgba(176,124,255,0.4)] hover:bg-white hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+              onClick={openForgeSales}
+            >
+              Talk to Sales
+            </button>
+          )}
 
           {/* Burger */}
           <button
